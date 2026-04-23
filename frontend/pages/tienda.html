@@ -18,8 +18,8 @@
       --font:'Inter',-apple-system,sans-serif;--r:8px;--rl:14px;
       --sh:0 1px 3px rgba(0,0,0,.08);--sh-md:0 4px 12px rgba(0,0,0,.08);--sh-lg:0 12px 24px rgba(0,0,0,.1);
     }
-    html{scroll-behavior:smooth}
-    body{font-family:var(--font);background:var(--g50);color:var(--g900);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+    html{scroll-behavior:smooth;overflow-x:hidden}
+    body{font-family:var(--font);background:var(--g50);color:var(--g900);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
     a{text-decoration:none;color:inherit}
     button{font-family:var(--font);cursor:pointer}
     input,select{font-family:var(--font)}
@@ -116,7 +116,7 @@
     .ben-d{font-size:11px;color:var(--g500);margin-top:1px}
 
     /* PRODUCTS */
-    .ps{padding:32px 0 64px}
+    .ps{padding:32px 0 64px;max-width:100%;overflow:hidden}
     .ps-in{max-width:1320px;margin:0 auto;padding:0 24px}
     .ps-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
     .ps-ttl{font-size:20px;font-weight:800;color:var(--g900)}
@@ -566,7 +566,7 @@
 
 <script>
 const PROXY='https://odoo-proxy-production-c0bc.up.railway.app';
-const ODOO={url:'https://importax.odoo.com',db:'importax',username:'lourdesadriana15n@gmail.com',password:'Lourdes2005*'};
+const ODOO={url:'https://importax.odoo.com',db:'importax',username:'lourdesadriana15n@gmail.com',password:localStorage.getItem('odoo_pass')||''};
 const SESSION_KEY='ix_session';
 const GOOGLE_CLIENT_ID='1061083912804-8momh9jgi3glfn2e1jdd281ae0jpdsjq.apps.googleusercontent.com';
 let allP=[],filtP=[],cart=JSON.parse(localStorage.getItem('ix_cart')||'[]'),mQty=1,curCat='all';
@@ -603,7 +603,7 @@ async function loadProds(){
     const r=await fetch(PROXY+'/api/odoo/rpc',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({...ODOO,args:[null,null,null,'product.template','search_read',
         [[['sale_ok','=',true],['active','=',true]]],
-        {fields:['id','name','list_price','qty_available','categ_id','description_sale','image_1920'],limit:200}
+        {fields:['id','name','list_price','qty_available','categ_id','description_sale','image_512'],limit:200}
       ]})});
     const d=await r.json();
     if(d.ok&&d.result&&d.result.length>0){allP=d.result.map(mp);}
@@ -614,7 +614,7 @@ async function loadProds(){
   renderP(filtP);
 }
 
-function mp(p){return{id:p.id,nm:p.name,pr:p.list_price||0,prM:(p.list_price||0)*.82,st:p.qty_available||0,cat:p.categ_id?p.categ_id[1]:'General',catS:getCS(p.categ_id?p.categ_id[1]:''),ds:p.description_sale||'Producto de alta calidad seleccionado especialmente para ti.',img:p.image_1920?'data:image/jpeg;base64,'+p.image_1920:null,bdg:'new',rat:(4.2+Math.random()*.8).toFixed(1)*1,rev:Math.floor(Math.random()*300)+20};}
+function mp(p){return{id:p.id,nm:p.name,pr:p.list_price||0,prM:(p.list_price||0)*.82,st:p.qty_available||0,cat:p.categ_id?p.categ_id[1]:'General',catS:getCS(p.categ_id?p.categ_id[1]:''),ds:p.description_sale||'Producto de alta calidad seleccionado especialmente para ti.',img:p.image_512?'data:image/jpeg;base64,'+p.image_512:null,bdg:'new',rat:(4.2+Math.random()*.8).toFixed(1)*1,rev:Math.floor(Math.random()*300)+20};}
 function getCS(c){c=c.toLowerCase();if(c.includes('ropa')||c.includes('text')||c.includes('moda'))return'ropa';if(c.includes('hogar')||c.includes('mueble')||c.includes('cocin'))return'hogar';if(c.includes('bell')||c.includes('salud')||c.includes('cosm'))return'bell';if(c.includes('dep')||c.includes('sport'))return'dep';if(c.includes('jugue')||c.includes('toy'))return'juguetes';if(c.includes('acceso')||c.includes('bolso')||c.includes('cartera'))return'accesorios';if(c.includes('herr')||c.includes('tool'))return'herramientas';return'otros';}
 
 function demoP(){allP=[{id:1,nm:'Cartera de Cuero Premium',pr:55,prM:45.1,st:30,cat:'Accesorios',catS:'accesorios',ds:'Cartera de alta calidad, multiples compartimentos.',img:null,bdg:'feat',rat:4.8,rev:124},{id:2,nm:'Jarra de Litro Termico',pr:15,prM:12.3,st:50,cat:'Hogar',catS:'hogar',ds:'Jarra termica de 1 litro, mantiene la temperatura 12 horas.',img:null,bdg:'new',rat:4.6,rev:89},{id:3,nm:'Mochila Casual',pr:75,prM:61.5,st:25,cat:'Accesorios',catS:'accesorios',ds:'Mochila espaciosa con compartimento para laptop.',img:null,bdg:'feat',rat:4.7,rev:203},{id:4,nm:'Polo Algodon Premium',pr:30,prM:24.6,st:100,cat:'Ropa',catS:'ropa',ds:'Polo de algodon 100%, comodo y duradero.',img:null,bdg:'new',rat:4.5,rev:67},{id:5,nm:'Set de Cocina 5 piezas',pr:89,prM:72.98,st:20,cat:'Hogar',catS:'hogar',ds:'Set completo de utensilios de cocina antiadherentes.',img:null,bdg:'new',rat:4.6,rev:312},{id:6,nm:'Zapatillas Deportivas',pr:120,prM:98.4,st:15,cat:'Deportes',catS:'dep',ds:'Zapatillas ligeras y transpirables para actividad fisica.',img:null,bdg:'feat',rat:4.7,rev:256},{id:7,nm:'Kit Cuidado Facial',pr:45,prM:36.9,st:80,cat:'Belleza',catS:'bell',ds:'Kit completo de cuidado facial, incluye crema hidratante y serum.',img:null,bdg:'new',rat:4.5,rev:178},{id:8,nm:'Juego de Herramientas',pr:65,prM:53.3,st:35,cat:'Herramientas',catS:'herramientas',ds:'Set de herramientas esenciales para el hogar.',img:null,bdg:'new',rat:4.4,rev:91}];}
@@ -656,7 +656,6 @@ function rs(r){let h='';for(let i=1;i<=5;i++)h+=`<svg class="star ${i<=Math.floo
 function verP(i){
   const p=filtP[i];const igv=p.pr*.18,tot=p.pr+igv;mQty=1;
   const sd=p.st<=0?'sd-out':p.st<=5?'sd-lw':'sd-ok';
-  const st=p.st<=0?'Sin stock':'st<=5?`Solo ${p.st} unidades`:`${p.st} unidades disponibles`';
   const stTxt=p.st<=0?'Sin stock disponible':p.st<=5?`Solo ${p.st} unidades disponibles`:`${p.st} unidades disponibles`;
   const imgHtml=p.img?`<img src="${p.img}" alt="${p.nm}" style="width:100%;height:100%;object-fit:contain;padding:10px">`:'<svg viewBox="0 0 24 24" style="width:90px;height:90px;stroke:#cbd5e1;fill:none;stroke-width:.7"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
   document.getElementById('modal-in').innerHTML=`
@@ -739,7 +738,6 @@ function limpiarFiltros(){document.getElementById('minPrice').value=0;document.g
 
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')buscar();});
-  const sp=localStorage.getItem('odoo_pass');if(sp)ODOO.password=sp;
   updateNavbar();renderC();loadProds();
 });
 </script>

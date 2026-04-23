@@ -531,7 +531,7 @@
 
 <script>
 const PROXY='https://odoo-proxy-production-c0bc.up.railway.app';
-const ODOO={url:'https://importax.odoo.com',db:'importax',username:'lourdesadriana15n@gmail.com',password:'Lourdes2005*'};
+const ODOO={url:'https://importax.odoo.com',db:'importax',username:'lourdesadriana15n@gmail.com',password:localStorage.getItem('odoo_pass')||''};
 const ADMIN_KEY='sumaq_admin';
 let allOrders=[],allProds=[],allClients=[],currentOrder=null;
 let chartVentas=null,chartEstados=null,chartReporte=null;
@@ -554,13 +554,9 @@ async function doAdminLogin(){
       ODOO.username=email;ODOO.password=pass;
       localStorage.setItem('odoo_pass',pass);
       mostrarPanel(email);
-    }else{err.textContent='Credenciales incorrectas. Verifica tu correo y contrasena.';err.classList.add('show');}
+    }else{err.textContent='Credenciales incorrectas. Verifica tu correo y contraseña de Odoo.';err.classList.add('show');}
   }catch(e){
-    // Allow demo access if proxy fails
-    if(email.includes('@')&&pass.length>=4){
-      localStorage.setItem(ADMIN_KEY,JSON.stringify({email,nombre:email.split('@')[0],expires:Date.now()+8*60*60*1000}));
-      mostrarPanel(email);
-    }else{err.textContent='Error de conexion. Verifica tus datos.';err.classList.add('show');}
+    err.textContent='Error de conexión con el servidor. Intenta nuevamente.';err.classList.add('show');
   }
   btn.disabled=false;btn.textContent='Ingresar al panel';
 }
@@ -579,10 +575,10 @@ function adminLogout(){localStorage.removeItem(ADMIN_KEY);window.location.reload
 
 // ── INIT ──
 window.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('tb-date').textContent=new Date().toLocaleDateString('es-PE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const admin=localStorage.getItem(ADMIN_KEY);
   if(admin){try{const a=JSON.parse(admin);if(Date.now()<a.expires){mostrarPanel(a.email);return;}}catch{}}
   const sp=localStorage.getItem('odoo_pass');if(sp)ODOO.password=sp;
-  document.getElementById('tb-date').textContent=new Date().toLocaleDateString('es-PE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 });
 
 // ── NAVIGATION ──
