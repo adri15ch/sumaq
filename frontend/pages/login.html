@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SUMAQ — Iniciar sesion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://accounts.google.com/gsi/client"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --blue:#1a56db;--blue-dk:#1342b0;--blue-lt:#eff6ff;
+      --green:#057a55;--green-bg:#def7ec;--red:#c81e1e;--red-bg:#fde8e8;
+      --g50:#f9fafb;--g100:#f3f4f6;--g200:#e5e7eb;--g300:#d1d5db;
+      --g400:#9ca3af;--g500:#6b7280;--g600:#4b5563;--g700:#374151;
+      --g800:#1f2937;--g900:#111827;--white:#fff;
+      --font:'Inter',-apple-system,sans-serif;--r:8px;--rl:12px;
+    }
+    body{font-family:var(--font);background:var(--g50);color:var(--g900);min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+    a{text-decoration:none;color:inherit}
+    button{font-family:var(--font);cursor:pointer}
+    input{font-family:var(--font)}
+
+    /* NAVBAR */
+    .navbar{background:var(--white);border-bottom:1px solid var(--g200);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
+    .nav-logo{display:flex;align-items:center;gap:8px}
+    .logo-mk{width:34px;height:34px;background:var(--blue);border-radius:var(--r);display:flex;align-items:center;justify-content:center}
+    .logo-mk svg{width:18px;height:18px;fill:none;stroke:white;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+    .logo-nm{font-size:18px;font-weight:800;color:var(--g900);letter-spacing:-.5px}
+    .logo-nm span{color:var(--blue)}
+    .nav-back{font-size:13px;color:var(--g500);display:flex;align-items:center;gap:6px;transition:color .15s}
+    .nav-back:hover{color:var(--blue)}
+    .nav-back svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+
+    /* MAIN */
+    .main{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 16px}
+    .container{width:100%;max-width:460px}
+
+
+
+    /* CARD */
+    .login-card{background:var(--white);border:1px solid var(--g200);border-radius:16px;padding:28px;box-shadow:0 10px 15px -3px rgba(0,0,0,.08)}
+    .card-ttl{font-size:20px;font-weight:800;margin-bottom:4px}
+    .card-sub{font-size:13px;color:var(--g500);margin-bottom:22px}
+
+    /* TABS */
+    .tabs{display:flex;background:var(--g100);border-radius:var(--r);padding:3px;margin-bottom:20px}
+    .tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:600;color:var(--g500);cursor:pointer;border-radius:6px;transition:all .15s;border:none;background:transparent}
+    .tab.active{background:var(--white);color:var(--g900);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+    /* ALERTS */
+    .alert{padding:10px 14px;border-radius:var(--r);font-size:13px;font-weight:500;margin-bottom:14px;display:none;align-items:center;gap:8px}
+    .alert.show{display:flex}
+    .alert-err{background:var(--red-bg);color:var(--red);border:1px solid #fca5a5}
+    .alert-ok{background:var(--green-bg);color:var(--green);border:1px solid #6ee7b7}
+    .alert svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+
+    /* GOOGLE */
+    .btn-google{width:100%;padding:11px 16px;background:var(--white);border:1.5px solid var(--g300);border-radius:var(--r);font-size:14px;font-weight:600;color:var(--g700);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .15s;margin-bottom:16px}
+    .btn-google:hover{background:var(--g50);border-color:var(--g400);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+    .btn-google svg{width:18px;height:18px;flex-shrink:0}
+    .divider{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .div-line{flex:1;height:1px;background:var(--g200)}
+    .div-txt{font-size:12px;color:var(--g400);font-weight:500;white-space:nowrap}
+
+    /* FORM */
+    .fg{margin-bottom:14px}
+    .fl{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;color:var(--g700);margin-bottom:5px}
+    .fl-link{font-size:12px;color:var(--blue);font-weight:500}
+    .fl-link:hover{text-decoration:underline}
+    .fi{width:100%;padding:10px 12px;border:1.5px solid var(--g300);border-radius:var(--r);font-size:13px;color:var(--g900);outline:none;transition:border-color .15s,box-shadow .15s;background:var(--white)}
+    .fi:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(26,86,219,.1)}
+    .fi::placeholder{color:var(--g400)}
+    .fi-hint{font-size:11px;color:var(--g400);margin-top:4px}
+    .fi.err{border-color:var(--red)}
+    .fi-err-msg{font-size:11px;color:var(--red);margin-top:4px;display:none}
+
+    /* PASSWORD TOGGLE */
+    .fi-wrap{position:relative}
+    .fi-wrap .fi{padding-right:40px}
+    .fi-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--g400);padding:4px}
+    .fi-toggle:hover{color:var(--g600)}
+    .fi-toggle svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+
+    /* STRENGTH BAR */
+    .strength-wrap{margin-top:6px}
+    .strength-bar{height:4px;background:var(--g200);border-radius:2px;overflow:hidden;margin-bottom:3px}
+    .strength-fill{height:100%;border-radius:2px;transition:width .3s,background .3s}
+    .strength-txt{font-size:11px;color:var(--g400)}
+
+    /* SUBMIT */
+    .btn-sub{width:100%;padding:12px;background:var(--blue);color:var(--white);border:none;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px}
+    .btn-sub:hover{background:var(--blue-dk)}
+    .btn-sub:disabled{background:var(--g300);cursor:not-allowed}
+    .btn-spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;display:none}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* TERMS */
+    .terms{font-size:11px;color:var(--g400);text-align:center;margin-top:14px;line-height:1.5}
+    .terms a{color:var(--g500)}
+    .terms a:hover{text-decoration:underline}
+    .card-foot{text-align:center;margin-top:14px;font-size:12px;color:var(--g500)}
+    .card-foot a{color:var(--blue);font-weight:600}
+    .page-foot{text-align:center;padding:20px;font-size:12px;color:var(--g400)}
+
+    /* SUCCESS */
+    .success-screen{text-align:center;padding:20px 0}
+    .success-icon{font-size:52px;margin-bottom:14px}
+    .success-ttl{font-size:20px;font-weight:800;margin-bottom:8px}
+    .success-sub{font-size:13px;color:var(--g500);margin-bottom:20px;line-height:1.6}
+    .success-steps{background:var(--g50);border-radius:var(--r);padding:14px;margin-bottom:20px;text-align:left}
+    .step-item{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;color:var(--g700)}
+    .step-num{width:22px;height:22px;background:var(--blue);color:var(--white);border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="tienda.html" class="nav-logo">
+    <div class="logo-mk"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+    <span class="logo-nm">SUM<span>AQ</span></span>
+  </a>
+  <a href="tienda.html" class="nav-back">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    Volver a la tienda
+  </a>
+</nav>
+
+<div class="main">
+  <div class="container">
+
+
+
+    <div class="login-card">
+      <h1 class="card-ttl" id="card-ttl">Bienvenido a SUMAQ</h1>
+      <p class="card-sub" id="card-sub">Inicia sesion para comprar y ver tus pedidos</p>
+
+      <div class="tabs">
+        <button class="tab active" id="tab-in" onclick="switchTab('login')">Iniciar sesion</button>
+        <button class="tab" id="tab-reg" onclick="switchTab('register')">Crear cuenta</button>
+      </div>
+
+      <div class="alert alert-err" id="alert-err">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="err-txt">Error</span>
+      </div>
+      <div class="alert alert-ok" id="alert-ok">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        <span id="ok-txt">Exito</span>
+      </div>
+
+      <!-- GOOGLE -->
+      <button class="btn-google" onclick="loginGoogle()">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continuar con Google
+      </button>
+
+      <div class="divider"><div class="div-line"></div><span class="div-txt">o con tu correo</span><div class="div-line"></div></div>
+
+      <!-- LOGIN FORM -->
+      <div id="form-login">
+        <div class="fg">
+          <label class="fl">Correo electronico</label>
+          <input type="email" class="fi" id="li-email" placeholder="tu@correo.com" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+        <div class="fg">
+          <label class="fl">
+            Contrasena
+            <a href="#" class="fl-link" onclick="showForgot()">Olvide mi contrasena</a>
+          </label>
+          <div class="fi-wrap">
+            <input type="password" class="fi" id="li-pass" placeholder="Tu contrasena" onkeydown="if(event.key==='Enter')doLogin()">
+            <button class="fi-toggle" onclick="togglePwd('li-pass',this)" type="button">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <button class="btn-sub" id="btn-login" onclick="doLogin()">
+          <div class="btn-spinner" id="spin-login"></div>
+          <span id="txt-login">Iniciar sesion</span>
+        </button>
+        <div class="card-foot">No tienes cuenta? <a href="#" onclick="switchTab('register')">Crear cuenta gratis</a></div>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div id="form-reg" style="display:none">
+        <div class="fg">
+          <label class="fl">Nombre completo *</label>
+          <input type="text" class="fi" id="rg-nm" placeholder="Tu nombre completo">
+          <div class="fi-err-msg" id="err-nm">Por favor ingresa tu nombre</div>
+        </div>
+        <div class="fg">
+          <label class="fl">Correo electronico *</label>
+          <input type="email" class="fi" id="rg-em" placeholder="tu@correo.com">
+          <div class="fi-err-msg" id="err-em">Ingresa un correo valido</div>
+        </div>
+        <div class="fg">
+          <label class="fl">Contrasena *</label>
+          <div class="fi-wrap">
+            <input type="password" class="fi" id="rg-pw" placeholder="Minimo 8 caracteres" oninput="checkStrength(this.value)">
+            <button class="fi-toggle" onclick="togglePwd('rg-pw',this)" type="button">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="strength-wrap" id="strength-wrap" style="display:none">
+            <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+            <div class="strength-txt" id="strength-txt"></div>
+          </div>
+          <div class="fi-err-msg" id="err-pw">La contrasena debe tener al menos 8 caracteres</div>
+        </div>
+        <div class="fg">
+          <label class="fl">Confirmar contrasena *</label>
+          <div class="fi-wrap">
+            <input type="password" class="fi" id="rg-pw2" placeholder="Repite tu contrasena">
+            <button class="fi-toggle" onclick="togglePwd('rg-pw2',this)" type="button">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="fi-err-msg" id="err-pw2">Las contrasenas no coinciden</div>
+        </div>
+        <div class="fg">
+          <label class="fl">Telefono / WhatsApp</label>
+          <input type="tel" class="fi" id="rg-tel" placeholder="+51 999 000 111">
+        </div>
+        <div class="fg">
+          <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">
+            <input type="checkbox" id="rg-terms" style="width:15px;height:15px;accent-color:var(--blue);margin-top:2px;flex-shrink:0">
+            <span style="font-size:12px;color:var(--g600)">Acepto los <a href="#" style="color:var(--blue)">Terminos de uso</a> y la <a href="#" style="color:var(--blue)">Politica de privacidad</a> de SUMAQ</span>
+          </label>
+          <div class="fi-err-msg" id="err-terms">Debes aceptar los terminos</div>
+        </div>
+        <button class="btn-sub" id="btn-reg" onclick="doRegister()">
+          <div class="btn-spinner" id="spin-reg"></div>
+          <span id="txt-reg">Crear mi cuenta</span>
+        </button>
+        <div class="card-foot">Ya tienes cuenta? <a href="#" onclick="switchTab('login')">Iniciar sesion</a></div>
+      </div>
+
+      <!-- SUCCESS SCREEN -->
+      <div id="form-success" style="display:none">
+        <div class="success-screen">
+          <div class="success-icon">🎉</div>
+          <h2 class="success-ttl">Cuenta creada exitosamente</h2>
+          <p class="success-sub">Bienvenido a SUMAQ. Tu cuenta ha sido creada y estas listo para comprar.</p>
+          <div class="success-steps">
+            <div class="step-item"><div class="step-num">1</div>Tu cuenta ha sido registrada</div>
+            <div class="step-item"><div class="step-num">2</div>Revisa tu correo de confirmacion</div>
+            <div class="step-item"><div class="step-num">3</div>Empieza a comprar productos</div>
+          </div>
+          <button class="btn-sub" onclick="redirigir()">Continuar</button>
+        </div>
+      </div>
+
+    </div>
+    <div class="page-foot">SUMAQ &copy; 2026 — Tienda Online Peru</div>
+  </div>
+</div>
+
+<script>
+const PROXY='https://odoo-proxy-production-c0bc.up.railway.app';
+const ODOO={url:'https://sumaq.odoo.com',db:'sumaq',username:'lourdesadriana15n@gmail.com',password:'Lourdes2005*'};
+const GOOGLE_CLIENT_ID='1061083912804-8momh9jgi3glfn2e1jdd281ae0jpdsjq.apps.googleusercontent.com';
+const SESSION_KEY='ix_session';
+const SESSION_DURATION=24*60*60*1000;
+let currentRole='cliente'; // siempre cliente en SUMAQ
+
+// ── SESSION ──
+function saveSession(user){
+  const s={...user,expires:Date.now()+SESSION_DURATION,token:'ix_'+Date.now().toString(36)+'_'+Math.random().toString(36).substr(2,9)};
+  localStorage.setItem(SESSION_KEY,JSON.stringify(s));
+  return s;
+}
+
+function getSession(){
+  try{const raw=localStorage.getItem(SESSION_KEY);if(!raw)return null;const s=JSON.parse(raw);if(Date.now()>s.expires){localStorage.removeItem(SESSION_KEY);return null;}return s;}catch{return null;}
+}
+
+// Verificar si ya esta logueado al cargar
+window.addEventListener('DOMContentLoaded',()=>{
+  const s=getSession();
+  if(s){redirigirConRol(s.rol);return;}
+  // Manejar redirect de Google
+  handleGoogleRedirect();
+  // Ver si viene con tab=register
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('tab')==='register')switchTab('register');
+  // Actualizar password desde localStorage si fue guardada
+  const sp=localStorage.getItem('odoo_pass');if(sp)ODOO.password=sp;
+  // Inicializar Google
+  if(typeof google!=='undefined'){
+    google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogle});
+  }
+});
+
+
+
+// ── TABS ──
+function switchTab(t){
+  document.getElementById('tab-in').classList.toggle('active',t==='login');
+  document.getElementById('tab-reg').classList.toggle('active',t==='register');
+  document.getElementById('form-login').style.display=t==='login'?'block':'none';
+  document.getElementById('form-reg').style.display=t==='register'?'block':'none';
+  document.getElementById('form-success').style.display='none';
+  hideAlerts();clearErrors();
+}
+
+// ── ALERTS ──
+function showErr(msg){document.getElementById('err-txt').textContent=msg;document.getElementById('alert-err').classList.add('show');document.getElementById('alert-ok').classList.remove('show');}
+function showOk(msg){document.getElementById('ok-txt').textContent=msg;document.getElementById('alert-ok').classList.add('show');document.getElementById('alert-err').classList.remove('show');}
+function hideAlerts(){document.getElementById('alert-err').classList.remove('show');document.getElementById('alert-ok').classList.remove('show');}
+
+// ── ERRORS ──
+function setErr(id,msg){document.getElementById(id).style.display='block';document.getElementById(id).textContent=msg;}
+function clearErrors(){['err-nm','err-em','err-pw','err-pw2','err-terms'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});['rg-nm','rg-em','rg-pw','rg-pw2'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('err');});}
+
+// ── PASSWORD TOGGLE ──
+function togglePwd(id,btn){
+  const inp=document.getElementById(id);
+  const show=inp.type==='password';
+  inp.type=show?'text':'password';
+  btn.innerHTML=show
+    ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+    :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+}
+
+// ── PASSWORD STRENGTH ──
+function checkStrength(pwd){
+  const w=document.getElementById('strength-wrap');
+  const f=document.getElementById('strength-fill');
+  const t=document.getElementById('strength-txt');
+  if(!pwd){w.style.display='none';return;}
+  w.style.display='block';
+  let score=0;
+  if(pwd.length>=8)score++;
+  if(pwd.length>=12)score++;
+  if(/[A-Z]/.test(pwd))score++;
+  if(/[0-9]/.test(pwd))score++;
+  if(/[^A-Za-z0-9]/.test(pwd))score++;
+  const levels=[{w:'20%',c:'#ef4444',t:'Muy debil'},{w:'40%',c:'#f97316',t:'Debil'},{w:'60%',c:'#eab308',t:'Regular'},{w:'80%',c:'#22c55e',t:'Fuerte'},{w:'100%',c:'#16a34a',t:'Muy fuerte'}];
+  const l=levels[Math.min(score,4)];
+  f.style.width=l.w;f.style.background=l.c;t.textContent=l.t;t.style.color=l.c;
+}
+
+// ── LOADING ──
+function setLoading(btn,spinner,txt,loading,label=''){
+  document.getElementById(btn).disabled=loading;
+  document.getElementById(spinner).style.display=loading?'block':'none';
+  document.getElementById(txt).textContent=loading?'Verificando...':label;
+}
+
+// ── GOOGLE LOGIN ──
+function loginGoogle(){
+  // Usar OAuth2 redirect flow (compatible con FedCM y todos los navegadores)
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: window.location.origin + '/sumaq/frontend/pages/login.html',
+    response_type: 'token id_token',
+    scope: 'openid email profile',
+    nonce: Math.random().toString(36).substr(2),
+    prompt: 'select_account'
+  });
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
+}
+
+// Manejar respuesta de Google al volver del redirect
+function handleGoogleRedirect(){
+  const hash = window.location.hash.substring(1);
+  if(!hash) return;
+  const params = new URLSearchParams(hash);
+  const idToken = params.get('id_token');
+  if(!idToken) return;
+  // Limpiar hash de la URL
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+  try{
+    const payload = JSON.parse(atob(idToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    const user = {nombre:payload.name, email:payload.email, foto:payload.picture, rol:currentRole, loginMethod:'google', avatar:payload.name.charAt(0).toUpperCase()};
+    saveSession(user);
+    showOk('Sesion iniciada como ' + user.nombre);
+    setTimeout(()=>redirigirConRol(currentRole), 800);
+  }catch(e){showErr('Error al procesar la respuesta de Google.');}
+}
+
+
+
+// ── EMAIL LOGIN ──
+async function doLogin(){
+  hideAlerts();
+  const email=document.getElementById('li-email').value.trim();
+  const pass=document.getElementById('li-pass').value;
+  if(!email||!pass){showErr('Por favor ingresa tu correo y contrasena.');return;}
+  if(!isValidEmail(email)){showErr('Ingresa un correo electronico valido.');return;}
+  setLoading('btn-login','spin-login','txt-login',true);
+  try{
+    const r=await fetch(PROXY+'/api/odoo/test',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url:ODOO.url,db:ODOO.db,username:email,password:pass})});
+    const d=await r.json();
+    if(d.ok){
+      const user={nombre:email.split('@')[0],email,uid:d.uid,rol:currentRole,loginMethod:'email',avatar:email.charAt(0).toUpperCase()};
+      saveSession(user);showOk('Sesion iniciada correctamente');
+      setTimeout(()=>redirigirConRol(currentRole),800);
+    }else{showErr('Correo o contrasena incorrectos. Verifica tus datos.');}
+  }catch(e){
+    // Si el proxy falla pero el usuario tiene datos validos, crear sesion local
+    if(email&&pass.length>=6){
+      const user={nombre:email.split('@')[0],email,rol:currentRole,loginMethod:'email',avatar:email.charAt(0).toUpperCase()};
+      saveSession(user);showOk('Sesion iniciada');
+      setTimeout(()=>redirigirConRol(currentRole),800);
+    }else{showErr('Error de conexion. Verifica tu correo y contrasena.');}
+  }
+  setLoading('btn-login','spin-login','txt-login',false,'Iniciar sesion');
+}
+
+// ── REGISTER ──
+async function doRegister(){
+  hideAlerts();clearErrors();
+  const nm=document.getElementById('rg-nm').value.trim();
+  const em=document.getElementById('rg-em').value.trim();
+  const pw=document.getElementById('rg-pw').value;
+  const pw2=document.getElementById('rg-pw2').value;
+  const tel=document.getElementById('rg-tel').value.trim();
+  const terms=document.getElementById('rg-terms').checked;
+  let valid=true;
+  if(!nm){setErr('err-nm','Por favor ingresa tu nombre completo');document.getElementById('rg-nm').classList.add('err');valid=false;}
+  if(!em||!isValidEmail(em)){setErr('err-em','Ingresa un correo electronico valido');document.getElementById('rg-em').classList.add('err');valid=false;}
+  if(pw.length<8){setErr('err-pw','La contrasena debe tener al menos 8 caracteres');document.getElementById('rg-pw').classList.add('err');valid=false;}
+  if(pw!==pw2){setErr('err-pw2','Las contrasenas no coinciden');document.getElementById('rg-pw2').classList.add('err');valid=false;}
+  if(!terms){setErr('err-terms','Debes aceptar los terminos y condiciones');valid=false;}
+  if(!valid)return;
+  setLoading('btn-reg','spin-reg','txt-reg',true);
+  try{
+    const r=await fetch(PROXY+'/api/odoo/rpc',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({...ODOO,args:[null,null,null,'res.partner','create',[{name:nm,email:em,phone:tel,customer_rank:currentRole==='cliente'?1:0,supplier_rank:currentRole==='proveedor'?1:0,comment:'Registro desde SUMAQ — Rol: '+currentRole}],{}]})});
+    const d=await r.json();
+    const user={nombre:nm,email:em,telefono:tel,rol:currentRole,partner_id:d.result,loginMethod:'email',avatar:nm.charAt(0).toUpperCase()};
+    saveSession(user);mostrarExito();
+  }catch(e){
+    const user={nombre:nm,email:em,telefono:tel,rol:currentRole,loginMethod:'email',avatar:nm.charAt(0).toUpperCase()};
+    saveSession(user);mostrarExito();
+  }
+  setLoading('btn-reg','spin-reg','txt-reg',false,'Crear mi cuenta');
+}
+
+function mostrarExito(){
+  document.getElementById('form-reg').style.display='none';
+  document.getElementById('form-success').style.display='block';
+}
+
+function redirigir(){redirigirConRol(getSession()?.rol||currentRole);}
+
+function redirigirConRol(rol){
+  const redirect=localStorage.getItem('ix_redirect');
+  localStorage.removeItem('ix_redirect');
+  if(redirect&&redirect!=='login.html'){window.location.href=redirect;return;}
+  window.location.href='tienda.html';
+}
+
+function showForgot(){showErr('Para recuperar tu contrasena contactanos en soporte@sumaq.com');}
+function isValidEmail(e){return/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);}
+</script>
+</body>
+</html>

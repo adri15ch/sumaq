@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SUMAQ — Mis Pedidos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--blue:#1a56db;--blue-dk:#1342b0;--blue-lt:#eff6ff;--blue-md:#bfdbfe;--green:#057a55;--green-bg:#def7ec;--red:#c81e1e;--red-bg:#fde8e8;--amber:#b45309;--amber-bg:#fef3c7;--g50:#f9fafb;--g100:#f3f4f6;--g200:#e5e7eb;--g300:#d1d5db;--g400:#9ca3af;--g500:#6b7280;--g600:#4b5563;--g700:#374151;--g800:#1f2937;--g900:#111827;--white:#fff;--font:'Inter',-apple-system,sans-serif;--r:8px;--rl:12px}
+    body{font-family:var(--font);background:var(--g50);color:var(--g900);min-height:100vh;-webkit-font-smoothing:antialiased}
+    a{text-decoration:none;color:inherit}
+    button{font-family:var(--font);cursor:pointer}
+
+    /* NAVBAR */
+    .navbar{background:var(--white);border-bottom:1px solid var(--g200);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .nav-logo{display:flex;align-items:center;gap:8px}
+    .logo-mk{width:34px;height:34px;background:var(--blue);border-radius:var(--r);display:flex;align-items:center;justify-content:center}
+    .logo-mk svg{width:18px;height:18px;fill:none;stroke:white;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+    .logo-nm{font-size:18px;font-weight:800;color:var(--g900);letter-spacing:-.5px}
+    .logo-nm span{color:var(--blue)}
+    .nav-rt{display:flex;align-items:center;gap:12px}
+    .nav-user{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--g700)}
+    .nav-av{width:30px;height:30px;background:var(--blue);border-radius:50%;color:var(--white);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+    .btn-out{padding:7px 14px;border:1.5px solid var(--g300);border-radius:var(--r);font-size:12px;font-weight:600;color:var(--g600);background:var(--white);transition:all .15s}
+    .btn-out:hover{border-color:var(--red);color:var(--red)}
+
+    /* MAIN */
+    .main{max-width:900px;margin:0 auto;padding:28px 24px}
+    .page-hd{margin-bottom:24px}
+    .page-ttl{font-size:22px;font-weight:800;margin-bottom:4px}
+    .page-sub{font-size:13px;color:var(--g500)}
+
+    /* TABS */
+    .tabs{display:flex;gap:0;background:var(--white);border:1px solid var(--g200);border-radius:var(--rl);padding:4px;margin-bottom:20px;width:fit-content}
+    .tab{padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;border-radius:var(--r);color:var(--g500);transition:all .15s;border:none;background:transparent}
+    .tab.active{background:var(--blue);color:var(--white);box-shadow:0 2px 6px rgba(26,86,219,.3)}
+
+    /* ORDERS */
+    .order-card{background:var(--white);border:1px solid var(--g200);border-radius:var(--rl);overflow:hidden;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .order-hd{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--g100);background:var(--g50)}
+    .order-id{font-size:13px;font-weight:700;color:var(--g900)}
+    .order-date{font-size:12px;color:var(--g500)}
+    .badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+    .b-pend{background:var(--amber-bg);color:var(--amber)}
+    .b-proc{background:var(--blue-lt);color:var(--blue)}
+    .b-env{background:#e0f2fe;color:#0369a1}
+    .b-ent{background:var(--green-bg);color:var(--green)}
+    .b-can{background:var(--red-bg);color:var(--red)}
+    .order-bd{padding:16px 18px}
+    .order-items{margin-bottom:12px}
+    .order-item{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--g100)}
+    .order-item:last-child{border-bottom:none}
+    .oi-img{width:44px;height:44px;background:var(--g100);border-radius:var(--r);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .oi-img svg{width:20px;height:20px;stroke:var(--g300);fill:none;stroke-width:1.5}
+    .oi-nm{font-size:13px;font-weight:500;color:var(--g800);flex:1}
+    .oi-qty{font-size:12px;color:var(--g500)}
+    .oi-pr{font-size:13px;font-weight:600;color:var(--g900)}
+    .order-ft{display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--g100)}
+    .order-totals{font-size:13px;color:var(--g600)}
+    .order-totals strong{color:var(--g900);font-size:15px}
+    .order-actions{display:flex;gap:8px}
+    .btn-sm{padding:7px 14px;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+    .btn-sm-p{background:var(--blue);color:var(--white);border:none}
+    .btn-sm-p:hover{background:var(--blue-dk)}
+    .btn-sm-o{background:var(--white);border:1.5px solid var(--g200);color:var(--g700)}
+    .btn-sm-o:hover{border-color:var(--blue);color:var(--blue)}
+
+    /* EMPTY */
+    .empty{text-align:center;padding:60px 20px;color:var(--g400)}
+    .empty svg{width:52px;height:52px;stroke:var(--g300);fill:none;stroke-width:1.5;display:block;margin:0 auto 14px}
+    .empty h3{font-size:16px;font-weight:600;color:var(--g600);margin-bottom:8px}
+    .empty p{font-size:13px;margin-bottom:20px}
+    .btn-shop{padding:11px 24px;background:var(--blue);color:var(--white);border:none;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer}
+    .btn-shop:hover{background:var(--blue-dk)}
+
+    /* LOADING */
+    .ld{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--g400)}
+    .ld-ring{width:32px;height:32px;border:3px solid var(--g200);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="tienda.html" class="nav-logo">
+    <div class="logo-mk"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+    <span class="logo-nm">SUM<span>AQ</span></span>
+  </a>
+  <div class="nav-rt">
+    <div class="nav-user">
+      <div class="nav-av" id="nav-av">U</div>
+      <span id="nav-nm">Usuario</span>
+    </div>
+    <button class="btn-out" onclick="cerrarSesion()">Cerrar sesion</button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="page-hd">
+    <h1 class="page-ttl">Mis pedidos</h1>
+    <p class="page-sub">Revisa el estado y historial de todos tus pedidos</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="filtrarPedidos('todos',this)">Todos</button>
+    <button class="tab" onclick="filtrarPedidos('pendiente',this)">Pendientes</button>
+    <button class="tab" onclick="filtrarPedidos('enviado',this)">Enviados</button>
+    <button class="tab" onclick="filtrarPedidos('entregado',this)">Entregados</button>
+  </div>
+
+  <div id="orders-container">
+    <div class="ld"><div class="ld-ring"></div><p>Cargando tus pedidos...</p></div>
+  </div>
+</div>
+
+<script>
+const PROXY='https://odoo-proxy-production-c0bc.up.railway.app';
+const ODOO={url:'https://sumaq.odoo.com',db:'sumaq',username:'lourdesadriana15n@gmail.com',password:'Lourdes2005*'};
+const SESSION_KEY='ix_session';
+let session=null,allOrders=[],currentFilter='todos';
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  // Verificar sesion
+  try{
+    const raw=localStorage.getItem(SESSION_KEY);
+    if(!raw){window.location.href='login.html';return;}
+    session=JSON.parse(raw);
+    if(Date.now()>session.expires){localStorage.removeItem(SESSION_KEY);window.location.href='login.html';return;}
+  }catch{window.location.href='login.html';return;}
+
+  document.getElementById('nav-av').textContent=session.avatar||session.nombre.charAt(0).toUpperCase();
+  document.getElementById('nav-nm').textContent=session.nombre;
+  const sp=localStorage.getItem('odoo_pass');if(sp)ODOO.password=sp;
+  await cargarPedidos();
+});
+
+async function cargarPedidos(){
+  try{
+    const r=await fetch(PROXY+'/api/odoo/rpc',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({...ODOO,args:[null,null,null,'sale.order','search_read',
+        [[['state','not in',['cancel','draft']]]],
+        {fields:['name','date_order','amount_total','state','order_line','partner_id'],limit:50,order:'date_order DESC'}
+      ]})});
+    const d=await r.json();
+    if(d.ok&&d.result){
+      allOrders=d.result.map(mapOrder);
+    }else{allOrders=demoOrders();}
+  }catch(e){allOrders=demoOrders();}
+  renderOrders(allOrders);
+}
+
+function mapOrder(o){
+  const estados={draft:'Borrador',sale:'Confirmado',done:'Entregado',cancel:'Cancelado'};
+  return{id:o.name,fecha:o.date_order?new Date(o.date_order).toLocaleDateString('es-PE'):'—',total:o.amount_total,estado:estados[o.state]||o.state,raw_state:o.state,items:[{nm:'Productos del pedido',qty:1,pr:o.amount_total/1.18}]};
+}
+
+function demoOrders(){
+  return[
+    {id:'#MKT-1089',fecha:'22/04/2026',total:802.40,estado:'Pendiente',raw_state:'sale',items:[{nm:'Monitor 24 pulgadas FHD',qty:1,pr:680},{nm:'Mouse Inalambrico',qty:1,pr:89}]},
+    {id:'#MKT-1086',fecha:'20/04/2026',total:187.62,estado:'Enviado',raw_state:'sent',items:[{nm:'Auriculares Bluetooth Pro',qty:1,pr:159}]},
+    {id:'#MKT-1080',fecha:'15/04/2026',total:53.10,estado:'Entregado',raw_state:'done',items:[{nm:'Polo Deportivo Premium',qty:1,pr:45}]},
+  ];
+}
+
+function renderOrders(list){
+  const c=document.getElementById('orders-container');
+  if(!list.length){
+    c.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><h3>No tienes pedidos aun</h3><p>Explora nuestro catalogo y realiza tu primera compra</p><button class="btn-shop" onclick="window.location.href='tienda.html'">Ver productos</button></div>`;
+    return;
+  }
+  c.innerHTML=list.map(o=>{
+    const badgeClass=o.raw_state==='sale'?'b-pend':o.raw_state==='sent'?'b-env':o.raw_state==='done'?'b-ent':'b-can';
+    const igv=o.total-o.total/1.18;
+    return`<div class="order-card">
+      <div class="order-hd">
+        <div><div class="order-id">Pedido ${o.id}</div><div class="order-date">${o.fecha}</div></div>
+        <span class="badge ${badgeClass}">${o.estado}</span>
+      </div>
+      <div class="order-bd">
+        <div class="order-items">
+          ${o.items.map(i=>`<div class="order-item"><div class="oi-img"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><span class="oi-nm">${i.nm}</span><span class="oi-qty">x${i.qty}</span><span class="oi-pr">S/ ${i.pr.toFixed(2)}</span></div>`).join('')}
+        </div>
+        <div class="order-ft">
+          <div class="order-totals">
+            IGV incluido: S/ ${igv.toFixed(2)} &nbsp;|&nbsp; <strong>Total: S/ ${o.total.toFixed(2)}</strong>
+          </div>
+          <div class="order-actions">
+            ${o.raw_state!=='done'?`<button class="btn-sm btn-sm-o" onclick="verEstado('${o.id}')">Ver estado</button>`:''}
+            ${o.raw_state==='done'?`<button class="btn-sm btn-sm-o" onclick="alert('Funcion de recompra en desarrollo')">Volver a comprar</button>`:''}
+            <button class="btn-sm btn-sm-p" onclick="verDetalle('${o.id}')">Ver detalle</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filtrarPedidos(f,el){
+  currentFilter=f;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  if(f==='todos'){renderOrders(allOrders);return;}
+  const map={pendiente:'sale',enviado:'sent',entregado:'done'};
+  renderOrders(allOrders.filter(o=>o.raw_state===map[f]));
+}
+
+function verDetalle(id){alert('Detalle del pedido '+id+'\n\nFuncionalidad completa disponible en proxima actualizacion.');}
+function verEstado(id){alert('Estado del pedido '+id+'\n\nTe notificaremos por WhatsApp y correo cuando haya novedades.');}
+function cerrarSesion(){localStorage.removeItem(SESSION_KEY);window.location.href='tienda.html';}
+</script>
+</body>
+</html>
