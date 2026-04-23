@@ -858,9 +858,21 @@ async function cargarInventario(){
 
 async function actualizarStock(id){
   const val=parseInt(document.getElementById('inv-'+id).value);
+  if(isNaN(val)||val<0){showToast('Ingresa una cantidad válida','error');return;}
+  const btn=document.querySelector(`button[onclick="actualizarStock(${id})"]`);
+  if(btn){btn.disabled=true;btn.textContent='Actualizando...';}
   try{
-    showToast('Para actualizar el stock ve a Odoo → Inventario → Actualizar cantidad','success');
-  }catch(e){showToast('Error al actualizar','error');}
+    const r=await fetch(PROXY+'/api/odoo/stock/actualizar',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({...ODOO,product_id:id,cantidad:val})});
+    const d=await r.json();
+    if(d.ok){
+      const p=allProds.find(x=>x.id===id);
+      if(p)p.qty_available=val;
+      showToast('✅ Stock actualizado a '+val+' unidades','success');
+      cargarInventario();
+    }else{showToast('Error: '+d.error,'error');}
+  }catch(e){showToast('Error de conexión con el servidor','error');}
+  if(btn){btn.disabled=false;btn.textContent='Actualizar';}
 }
 
 async function actualizarInventario(){
