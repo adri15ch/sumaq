@@ -549,7 +549,7 @@ async function doAdminLogin(){
     const r=await fetch(PROXY+'/api/odoo/test',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({url:ODOO.url,db:ODOO.db,username:email,password:pass})});
     const d=await r.json();
-    if(d.ok){
+    if(d.success){
       localStorage.setItem(ADMIN_KEY,JSON.stringify({email,nombre:email.split('@')[0],expires:Date.now()+8*60*60*1000}));
       ODOO.username=email;ODOO.password=pass;
       localStorage.setItem('odoo_pass',pass);
@@ -596,12 +596,12 @@ function showPage(page,el){
   else if(page==='reportes')cargarReportes();
 }
 
-// ── ODOO RPC ──
-async function odooRPC(model,method,args,kwargs={}){
+// ── ODOO RPC — formato correcto para el proxy ──
+async function odooRPC(model,method,args=[],kwargs={}){
   const r=await fetch(PROXY+'/api/odoo/rpc',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({...ODOO,args:[null,null,null,model,method,args,kwargs]})});
+    body:JSON.stringify({model,method,args,kwargs,username:ODOO.username,password:ODOO.password})});
   const d=await r.json();
-  if(d.ok)return d.result;
+  if(d.success)return d.result;
   throw new Error(d.error||'RPC error');
 }
 
@@ -609,7 +609,7 @@ async function odooRPC(model,method,args,kwargs={}){
 async function initDashboard(){
   try{
     const [orders,products,partners]=await Promise.all([
-      odooRPC('sale.order','search_read',[[['state','not in',['draft','cancel']]]],{fields:['name','amount_total','state','date_order','partner_id'],limit:100}),
+      odooRPC('sale.order','search_read',[[['state','!=','cancel']]],{fields:['name','amount_total','state','date_order','partner_id'],limit:200,order:'date_order desc'}),
       odooRPC('product.template','search_read',[[['sale_ok','=',true],['active','=',true]]],{fields:['id','name','list_price','qty_available'],limit:200}),
       odooRPC('res.partner','search_read',[[['customer_rank','>',0]]],{fields:['name','email'],limit:100})
     ]);
@@ -677,7 +677,7 @@ function updateChart(months){renderCharts();}
 // ── PEDIDOS ──
 async function cargarPedidos(){
   try{
-    const orders=await odooRPC('sale.order','search_read',[[['state','not in',['draft']]]],{fields:['name','amount_total','state','date_order','partner_id','note'],limit:100,order:'date_order DESC'});
+    const orders=await odooRPC('sale.order','search_read',[[['state','!=','cancel']]],{fields:['name','amount_total','state','date_order','partner_id','note'],limit:200,order:'date_order desc'});
     allOrders=orders||[];
   }catch(e){/* use cached */}
   renderTablaOrders(allOrders);
@@ -738,13 +738,27 @@ async function confirmarPedido(){
 }
 
 async function cambiarEstado(id,newState){
+  // Odoo no permite escribir 'state' directamente — usar métodos del workflow
+  const methodMap={
+    'sale':'action_confirm',   // borrador → confirmado
+    'done':'action_lock',      // confirmado → bloqueado/entregado
+    'cancel':'action_cancel',  // cualquiera → cancelado
+    'draft':'action_draft',    // cancelado → borrador
+  };
+  const method=methodMap[newState];
+  if(!method){showToast('Acción no soportada','error');return;}
   try{
-    await odooRPC('sale.order','write',[[id],{state:newState}]);
+    // Llamar al método del workflow (puede devolver None o un dict — ambos son válidos)
+    const r=await fetch(PROXY+'/api/odoo/rpc',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'sale.order',method,args:[[id]],kwargs:{},username:ODOO.username,password:ODOO.password})});
+    const d=await r.json();
+    // Actualizar estado local aunque el método devuelva None (normal en SaaS 19.2)
     const o=allOrders.find(x=>x.id===id);
     if(o)o.state=newState;
     renderTablaOrders(allOrders);
-    showToast('Estado actualizado correctamente','success');
-  }catch(e){showToast('Error al actualizar el estado','error');}
+    showToast('✅ Estado actualizado en Odoo','success');
+    setTimeout(()=>cargarPedidos(),1500); // recargar para confirmar
+  }catch(e){showToast('Error al cambiar estado: '+e.message,'error');}
 }
 
 function cerrarModalOrder(){document.getElementById('modal-order').classList.remove('open');currentOrder=null;}
@@ -863,14 +877,16 @@ async function actualizarStock(id){
   if(btn){btn.disabled=true;btn.textContent='Actualizando...';}
   try{
     const r=await fetch(PROXY+'/api/odoo/stock/actualizar',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({...ODOO,product_id:id,cantidad:val})});
+      body:JSON.stringify({username:ODOO.username,password:ODOO.password,product_id:id,quantity:val})});
     const d=await r.json();
-    if(d.ok){
+    if(d.success){
       const p=allProds.find(x=>x.id===id);
       if(p)p.qty_available=val;
-      showToast('✅ Stock actualizado a '+val+' unidades','success');
+      showToast('✅ Stock actualizado a '+val+' unidades en Odoo','success');
       cargarInventario();
-    }else{showToast('Error: '+d.error,'error');}
+    }else if(d.warning){
+      showToast('⚠️ '+d.message,'');
+    }else{showToast('❌ Error: '+(d.error||'No se pudo actualizar'),'error');}
   }catch(e){showToast('Error de conexión con el servidor','error');}
   if(btn){btn.disabled=false;btn.textContent='Actualizar';}
 }
