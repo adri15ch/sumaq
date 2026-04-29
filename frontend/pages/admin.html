@@ -466,7 +466,7 @@
         <div class="stat-ic"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
         <div class="stat-lbl">IGV recaudado</div>
         <div class="stat-val" id="rep-igv">S/ 0</div>
-        <div class="stat-change up">18% de ventas</div>
+        <div class="stat-change up">4.5% de IGV</div>
       </div>
     </div>
     <div class="chart-card">
@@ -714,7 +714,7 @@ function verPedido(id){
   const o=allOrders.find(x=>x.id===id);
   if(!o)return;
   currentOrder=o;
-  const igv=o.amount_total-o.amount_total/1.18;
+  const igv=o.amount_total-o.amount_total/1.045;
   document.getElementById('modal-order-body').innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
       <div><div class="fl">N° de pedido</div><strong>${o.name}</strong></div>
@@ -724,8 +724,8 @@ function verPedido(id){
     </div>
     ${o.note?`<div style="background:var(--g50);border:1px solid var(--g200);border-radius:var(--r);padding:14px;margin-bottom:16px;font-size:13px;color:var(--g700);line-height:1.6"><strong>Notas del pedido:</strong><br>${o.note.replace(/\n/g,'<br>')}</div>`:''}
     <div style="background:var(--g50);border:1px solid var(--g200);border-radius:var(--r);overflow:hidden">
-      <div style="display:flex;justify-content:space-between;padding:10px 14px;font-size:13px;border-bottom:1px solid var(--g200)"><span style="color:var(--g600)">Subtotal sin IGV</span><strong>S/ ${(o.amount_total/1.18).toFixed(2)}</strong></div>
-      <div style="display:flex;justify-content:space-between;padding:10px 14px;font-size:13px;border-bottom:1px solid var(--g200)"><span style="color:var(--g600)">IGV (18%)</span><strong>S/ ${igv.toFixed(2)}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:10px 14px;font-size:13px;border-bottom:1px solid var(--g200)"><span style="color:var(--g600)">Subtotal sin IGV</span><strong>S/ ${(o.amount_total/1.045).toFixed(2)}</strong></div>
+      <div style="display:flex;justify-content:space-between;padding:10px 14px;font-size:13px;border-bottom:1px solid var(--g200)"><span style="color:var(--g600)">IGV (4.5%)</span><strong>S/ ${igv.toFixed(2)}</strong></div>
       <div style="display:flex;justify-content:space-between;padding:10px 14px;font-size:14px;font-weight:800;background:var(--primary-lt)"><span style="color:var(--primary)">Total pagado</span><span style="color:var(--primary)">S/ ${o.amount_total.toFixed(2)}</span></div>
     </div>`;
   document.getElementById('modal-order').classList.add('open');
@@ -901,7 +901,7 @@ async function cargarReportes(){
   if(!allOrders.length)await initDashboard();
   const total=allOrders.reduce((s,o)=>s+o.amount_total,0);
   const ticket=allOrders.length?total/allOrders.length:0;
-  const igv=total-total/1.18;
+  const igv=total-total/1.045;
   document.getElementById('rep-total').textContent='S/ '+total.toFixed(2);
   document.getElementById('rep-ticket').textContent='S/ '+ticket.toFixed(2);
   document.getElementById('rep-igv').textContent='S/ '+igv.toFixed(2);

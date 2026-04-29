@@ -690,7 +690,7 @@ footer{background:#212121;color:#aaa;padding:48px 0 0}
   <div class="cart-footer" id="cartFooter" style="display:none">
     <div class="cart-totals">
       <div class="cart-row"><span>Subtotal</span><span id="cartSub">S/ 0.00</span></div>
-      <div class="cart-row"><span>IGV (18%)</span><span id="cartIgv">S/ 0.00</span></div>
+      <div class="cart-row"><span>IGV (4.5%)</span><span id="cartIgv">S/ 0.00</span></div>
       <div class="cart-row free"><span>Envío</span><span id="cartEnvio">Gratis</span></div>
       <div class="cart-row total"><span>Total</span><span id="cartTotal">S/ 0.00</span></div>
     </div>
@@ -792,7 +792,7 @@ footer{background:#212121;color:#aaa;padding:48px 0 0}
 const PROXY='https://odoo-proxy-am0c.onrender.com';
 const SESSION_KEY='ix_session';
 const CART_KEY='ix_cart';
-const IGV=0.18;
+const IGV=0.045;
 
 let allP=[],filtP=[],cart=JSON.parse(localStorage.getItem(CART_KEY)||'[]');
 let curCat='all',mQty=1,curModalIdx=0;
@@ -890,6 +890,10 @@ function renderCart(){
 function changeQtyCart(i,d){cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);saveCart();renderCart();}
 function removeCart(i){cart.splice(i,1);saveCart();renderCart();}
 
+function addToCartById(id,qty=1){
+  const p=allP.find(x=>x.id===id)||filtP.find(x=>x.id===id);
+  if(p)addToCart(p,qty);
+}
 function addToCart(p,qty=1){
   const ex=cart.find(c=>c.id===p.id);
   if(ex)ex.qty+=qty;
@@ -1035,7 +1039,7 @@ function buildCard(p,idx){
   return`<div class="pc" data-idx="${idx}">
     <div class="pc-img">
       <img src="${p.img}" alt="${esc(p.nm)}" loading="lazy"/>
-      <span class="pc-disc">-18%</span>
+      <span class="pc-disc">-4.5%</span>
       <button class="pc-heart" onclick="event.stopPropagation();this.classList.toggle('fav')" title="Favorito">
         <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
       </button>
@@ -1054,7 +1058,7 @@ function buildCard(p,idx){
         <div class="pc-price-main">S/ ${tot}</div>
         <div class="pc-price-igv">Precio incluye IGV</div>
       </div>
-      <button class="btn-add" onclick="event.stopPropagation();addToCart(filtP[${idx}])" ${agotado?'disabled':''}>
+      <button class="btn-add" onclick="event.stopPropagation();addToCartById(${p.id})" ${agotado?'disabled':''}>
         ${agotado?'Sin stock':`<svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Agregar`}
       </button>
     </div>
@@ -1098,7 +1102,7 @@ function abrirModal(idx){
   const imgPanel=`<img class="modal-main-img" src="${p.img}" alt="${esc(p.nm)}"/>`;
   document.getElementById('modalInner').innerHTML=`
     <div class="modal-img-panel">
-      <span class="modal-disc-badge">-18% OFF</span>
+      <span class="modal-disc-badge">-4.5% OFF</span>
       ${imgPanel}
       <div class="modal-thumbs">
         <div class="modal-thumb active"><img src="${p.img}" alt=""/></div>
@@ -1116,7 +1120,7 @@ function abrirModal(idx){
         <div class="modal-price-orig">Antes: S/ ${orig}</div>
         <div class="modal-price-tag">PRECIO INTERNET</div>
         <div class="modal-price-main">S/ ${tot}</div>
-        <div class="modal-price-igv">Precio incluye IGV (18%) · Sin IGV: S/ ${p.pr.toFixed(2)}</div>
+        <div class="modal-price-igv">Precio incluye IGV (4.5%) · Sin IGV: S/ ${p.pr.toFixed(2)}</div>
         <div class="modal-price-mayorista">Comprando 10+ unidades: <strong>S/ ${(p.pr*0.82*1.18).toFixed(2)}</strong></div>
       </div>
       <div class="modal-stock">
