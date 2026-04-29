@@ -914,6 +914,52 @@ const CAT_IMGS={
 function getCatImg(catS,id){const a=CAT_IMGS[catS]||CAT_IMGS.otros;return a[id%a.length];}
 function getCS(c){c=(c||'').toLowerCase();if(c.includes('ropa')||c.includes('text')||c.includes('moda')||c.includes('camis')||c.includes('polo'))return'ropa';if(c.includes('bell')||c.includes('salud')||c.includes('cosm')||c.includes('maquill'))return'bell';if(c.includes('dep')||c.includes('sport')||c.includes('futil')||c.includes('zapatill'))return'dep';if(c.includes('jugue')||c.includes('toy')||c.includes('niño'))return'juguetes';if(c.includes('acceso')||c.includes('bolso')||c.includes('cartera')||c.includes('mochil'))return'accesorios';if(c.includes('herr')||c.includes('tool')||c.includes('ferret'))return'herramientas';if(c.includes('hogar')||c.includes('mueble')||c.includes('cocin')||c.includes('deco'))return'hogar';return'otros';}
 
+// Imagen por nombre de producto — ignora la imagen genérica de Odoo
+function getProductImg(name,catS,id){
+  const n=(name||'').toLowerCase();
+  // Accesorios
+  if(n.includes('cartera')||n.includes('bolso')||n.includes('billetera')||n.includes('clutch'))return'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('mochila')||n.includes('minnie')||n.includes('mickey')||n.includes('backpack'))return'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('cinturon')||n.includes('cinturón')||n.includes('belt'))return'https://images.unsplash.com/photo-1611010344444-5f9e4d86a6d7?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('lentes')||n.includes('gafas')||n.includes('anteojos')||n.includes('sunglasses'))return'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('gorra')||n.includes('sombrero')||n.includes('cap')||n.includes('hat'))return'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('reloj')||n.includes('watch'))return'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop&auto=format';
+  // Ropa
+  if(n.includes('polo')||n.includes('camiseta')||n.includes('camisa')||n.includes('blusa')||n.includes('tshirt'))return'https://images.unsplash.com/photo-1562157873-818bc0726f68?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('vestido')||n.includes('dress')||n.includes('falda'))return'https://images.unsplash.com/photo-1623609163859-ca93c959b98a?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('pantalon')||n.includes('pantalón')||n.includes('jean')||n.includes('short')||n.includes('pants'))return'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('chompa')||n.includes('casaca')||n.includes('chaqueta')||n.includes('jacket')||n.includes('abrigo'))return'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('ropa interior')||n.includes('pijama')||n.includes('pyjama'))return'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=400&h=400&fit=crop&auto=format';
+  // Calzado
+  if(n.includes('zapatilla')||n.includes('zapato')||n.includes('tenis')||n.includes('sneaker')||n.includes('shoe'))return'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('sandalia')||n.includes('bota')||n.includes('boot'))return'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400&h=400&fit=crop&auto=format';
+  // Hogar y cocina
+  if(n.includes('jarra')||n.includes('termo')||n.includes('litro')||n.includes('botella')||n.includes('bottle'))return'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('set cocina')||n.includes('kit cocina')||n.includes('sarten')||n.includes('olla')||n.includes('utensilio'))return'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('lampara')||n.includes('lámpara')||n.includes('luz')||n.includes('led')||n.includes('foco'))return'https://images.unsplash.com/photo-1540932239986-30128078f3c5?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('almohada')||n.includes('colcha')||n.includes('sabana')||n.includes('cojin'))return'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('organizador')||n.includes('caja')||n.includes('canasta'))return'https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=400&h=400&fit=crop&auto=format';
+  // Belleza
+  if(n.includes('maquillaje')||n.includes('paleta')||n.includes('sombra')||n.includes('labial'))return'https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('crema')||n.includes('serum')||n.includes('facial')||n.includes('hidratante')||n.includes('colágeno'))return'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('perfume')||n.includes('colonia')||n.includes('fragancia'))return'https://images.unsplash.com/photo-1541643600914-78b084683702?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('shampoo')||n.includes('acondicionador')||n.includes('cabello'))return'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('kit cuidado')||n.includes('set belleza')||n.includes('skincare'))return'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&h=400&fit=crop&auto=format';
+  // Deportes
+  if(n.includes('pelota')||n.includes('balon')||n.includes('futbol')||n.includes('football'))return'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('yoga')||n.includes('mat')||n.includes('banda')||n.includes('elastica'))return'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('pesa')||n.includes('mancuerna')||n.includes('gym')||n.includes('fitness'))return'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400&h=400&fit=crop&auto=format';
+  // Herramientas
+  if(n.includes('herramienta')||n.includes('destornillador')||n.includes('llave')||n.includes('martillo')||n.includes('taladro'))return'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=400&h=400&fit=crop&auto=format';
+  // Juguetes
+  if(n.includes('juguete')||n.includes('muñeca')||n.includes('peluche')||n.includes('construccion')||n.includes('lego'))return'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop&auto=format';
+  if(n.includes('auto')||n.includes('carro')||n.includes('car toy'))return'https://images.unsplash.com/photo-1530325553241-4f6e7690cf36?w=400&h=400&fit=crop&auto=format';
+  // Servicios / genérico
+  if(n.includes('booking')||n.includes('servicio')||n.includes('service')||n.includes('fee'))return'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=400&fit=crop&auto=format';
+  // Fallback por categoría
+  return getCatImg(catS,id);
+}
+
 function mapProduct(p){
   const catS=getCS(p.categ_id?p.categ_id[1]:'');
   return{
@@ -921,7 +967,7 @@ function mapProduct(p){
     st:p.qty_available||0,
     cat:p.categ_id?p.categ_id[1]:'General',catS,
     ds:p.description_sale||'Producto importado de alta calidad.',
-    img:p.image_512?'data:image/jpeg;base64,'+p.image_512:getCatImg(catS,p.id),
+    img:getProductImg(p.name,catS,p.id),
     rat:+(4.1+Math.random()*.9).toFixed(1),
     rev:Math.floor(Math.random()*400)+15,
     bdg:'new',
@@ -930,22 +976,38 @@ function mapProduct(p){
 
 function demoProd(){
   allP=[
-    {id:1,nm:'Cartera de Cuero Premium',pr:55,st:30,cat:'Accesorios',catS:'accesorios',ds:'Cartera de cuero sintético de alta calidad con múltiples compartimentos y cierre seguro.',img:'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=400&fit=crop',rat:4.8,rev:124,bdg:'feat'},
-    {id:2,nm:'Jarra Térmica Acero 1L',pr:15,st:50,cat:'Hogar',catS:'hogar',ds:'Jarra térmica de acero inoxidable 1 litro. Mantiene temperatura 12 horas.',img:'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=400&fit=crop',rat:4.6,rev:89,bdg:'new'},
-    {id:3,nm:'Mochila Casual Urbana',pr:75,st:25,cat:'Accesorios',catS:'accesorios',ds:'Mochila espaciosa con compartimento acolchado para laptop hasta 15". Material resistente.',img:'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop',rat:4.7,rev:203,bdg:'feat'},
-    {id:4,nm:'Polo Algodón Premium',pr:30,st:100,cat:'Ropa',catS:'ropa',ds:'Polo de algodón 100% peinado. Cómodo y duradero. Disponible en varios colores.',img:'https://images.unsplash.com/photo-1562157873-818bc0726f68?w=400&h=400&fit=crop',rat:4.5,rev:67,bdg:'new'},
-    {id:5,nm:'Set Cocina 5 Piezas',pr:89,st:20,cat:'Hogar',catS:'hogar',ds:'Set completo de utensilios de cocina antiadherentes. Incluye sartén, ollas y espátulas.',img:'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=400&fit=crop',rat:4.6,rev:312,bdg:'sale'},
-    {id:6,nm:'Zapatillas Deportivas Air',pr:120,st:15,cat:'Deportes',catS:'dep',ds:'Zapatillas ligeras y transpirables para alto rendimiento deportivo.',img:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop',rat:4.7,rev:256,bdg:'feat'},
-    {id:7,nm:'Kit Cuidado Facial 5 en 1',pr:45,st:80,cat:'Belleza',catS:'bell',ds:'Kit completo: crema hidratante, sérum, contorno de ojos, tónico y limpiador.',img:'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&h=400&fit=crop',rat:4.5,rev:178,bdg:'new'},
-    {id:8,nm:'Set Herramientas 20 Pzas',pr:65,st:35,cat:'Herramientas',catS:'herramientas',ds:'Set completo de herramientas esenciales para el hogar. Incluye caja organizadora.',img:'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=400&h=400&fit=crop',rat:4.4,rev:91,bdg:'new'},
-    {id:9,nm:'Vestido Floral Verano',pr:65,st:40,cat:'Ropa',catS:'ropa',ds:'Vestido floral ligero, tela suave y fresca. Ideal para verano.',img:'https://images.unsplash.com/photo-1623609163859-ca93c959b98a?w=400&h=400&fit=crop',rat:4.6,rev:142,bdg:'new'},
-    {id:10,nm:'Paleta Maquillaje 48 Col.',pr:38,st:60,cat:'Belleza',catS:'bell',ds:'Paleta de sombras 48 colores, pigmentación intensa y larga duración.',img:'https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=400&h=400&fit=crop',rat:4.7,rev:289,bdg:'sale'},
-    {id:11,nm:'Pelota Fútbol N°5',pr:45,st:55,cat:'Deportes',catS:'dep',ds:'Pelota reglamentaria N°5 de cuero sintético resistente.',img:'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=400&h=400&fit=crop',rat:4.5,rev:76,bdg:'new'},
-    {id:12,nm:'Juego Construcción 100 Pzas',pr:35,st:45,cat:'Juguetes',catS:'juguetes',ds:'Juego creativo 100 piezas coloridas para niños 3+ años.',img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop',rat:4.6,rev:198,bdg:'new'},
-    {id:13,nm:'Lámpara LED Escritorio',pr:28,st:70,cat:'Hogar',catS:'hogar',ds:'Lámpara LED de escritorio con 3 temperaturas de color y USB.',img:'https://images.unsplash.com/photo-1540932239986-30128078f3c5?w=400&h=400&fit=crop',rat:4.3,rev:55,bdg:'new'},
-    {id:14,nm:'Cinturón Cuero Clásico',pr:22,st:90,cat:'Accesorios',catS:'accesorios',ds:'Cinturón de cuero sintético premium. Hebilla metálica. Tallas S-XXL.',img:'https://images.unsplash.com/photo-1611010344444-5f9e4d86a6d7?w=400&h=400&fit=crop',rat:4.4,rev:67,bdg:'new'},
-    {id:15,nm:'Set Yoga Mat + Bandas',pr:55,st:30,cat:'Deportes',catS:'dep',ds:'Mat de yoga antideslizante + 3 bandas de resistencia. Ideal para casa.',img:'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop',rat:4.8,rev:134,bdg:'feat'},
-    {id:16,nm:'Crema Hidratante Facial',pr:20,st:120,cat:'Belleza',catS:'bell',ds:'Crema hidratante de uso diario con vitamina E y colágeno.',img:'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop',rat:4.5,rev:201,bdg:'sale'},
+    // ACCESORIOS
+    {id:1,nm:'Cartera de Cuero Premium',pr:55,st:30,cat:'Accesorios',catS:'accesorios',ds:'Cartera de cuero sintético de alta calidad, múltiples compartimentos y cierre con candado. Ideal para el día a día.',img:'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=400&fit=crop&auto=format',rat:4.8,rev:124,bdg:'feat'},
+    {id:2,nm:'Mochila Casual Urbana',pr:75,st:25,cat:'Accesorios',catS:'accesorios',ds:'Mochila espaciosa con compartimento acolchado para laptop hasta 15". Material resistente al agua.',img:'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&auto=format',rat:4.7,rev:203,bdg:'feat'},
+    {id:3,nm:'Cinturón Cuero Reversible',pr:22,st:90,cat:'Accesorios',catS:'accesorios',ds:'Cinturón de cuero sintético premium reversible, negro y marrón. Hebilla metálica dorada. Tallas S-XXL.',img:'https://images.unsplash.com/photo-1611010344444-5f9e4d86a6d7?w=400&h=400&fit=crop&auto=format',rat:4.4,rev:67,bdg:'new'},
+    {id:4,nm:'Lentes de Sol UV400',pr:35,st:60,cat:'Accesorios',catS:'accesorios',ds:'Lentes de sol con protección UV400. Marco resistente y lentes polarizadas. Incluye estuche.',img:'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=400&fit=crop&auto=format',rat:4.5,rev:89,bdg:'new'},
+    {id:5,nm:'Gorra Snapback Premium',pr:18,st:75,cat:'Accesorios',catS:'accesorios',ds:'Gorra snapback ajustable con bordado frontal. Material transpirable. Talla única.',img:'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop&auto=format',rat:4.3,rev:45,bdg:'new'},
+    {id:6,nm:'Reloj Casual Moderno',pr:48,st:40,cat:'Accesorios',catS:'accesorios',ds:'Reloj de cuarzo con correa de acero y cristal mineral. Resistente al agua 30m.',img:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop&auto=format',rat:4.6,rev:112,bdg:'new'},
+    // ROPA
+    {id:7,nm:'Polo Algodón Premium',pr:30,st:100,cat:'Ropa',catS:'ropa',ds:'Polo de algodón 100% peinado. Suave, cómodo y duradero. Disponible en varios colores.',img:'https://images.unsplash.com/photo-1562157873-818bc0726f68?w=400&h=400&fit=crop&auto=format',rat:4.5,rev:67,bdg:'new'},
+    {id:8,nm:'Vestido Floral Verano',pr:65,st:40,cat:'Ropa',catS:'ropa',ds:'Vestido floral ligero, tela suave y fresca. Diseño moderno con cintura ajustable.',img:'https://images.unsplash.com/photo-1623609163859-ca93c959b98a?w=400&h=400&fit=crop&auto=format',rat:4.6,rev:142,bdg:'new'},
+    {id:9,nm:'Casaca Deportiva Dri-Fit',pr:85,st:35,cat:'Ropa',catS:'ropa',ds:'Casaca deportiva con tecnología Dri-Fit, secado rápido y ventilación lateral. Ideal para gym.',img:'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=400&h=400&fit=crop&auto=format',rat:4.7,rev:98,bdg:'feat'},
+    {id:10,nm:'Pantalón Jean Slim Fit',pr:70,st:50,cat:'Ropa',catS:'ropa',ds:'Jean slim fit de mezclilla premium. Corte moderno y cómodo. Tallas 28 al 36.',img:'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop&auto=format',rat:4.4,rev:76,bdg:'new'},
+    // HOGAR
+    {id:11,nm:'Jarra Térmica Acero 1L',pr:15,st:50,cat:'Hogar',catS:'hogar',ds:'Jarra térmica de acero inoxidable 1 litro. Mantiene temperatura fría o caliente 12 horas.',img:'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&h=400&fit=crop&auto=format',rat:4.6,rev:89,bdg:'new'},
+    {id:12,nm:'Set Cocina 5 Piezas',pr:89,st:20,cat:'Hogar',catS:'hogar',ds:'Set completo de utensilios de cocina antiadherentes. Sartén, ollas y espátulas incluidas.',img:'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=400&fit=crop&auto=format',rat:4.6,rev:312,bdg:'sale'},
+    {id:13,nm:'Lámpara LED Escritorio',pr:28,st:70,cat:'Hogar',catS:'hogar',ds:'Lámpara LED de escritorio con 3 temperaturas de color, brillo ajustable y puerto USB.',img:'https://images.unsplash.com/photo-1540932239986-30128078f3c5?w=400&h=400&fit=crop&auto=format',rat:4.3,rev:55,bdg:'new'},
+    {id:14,nm:'Organizador Multiusos',pr:25,st:80,cat:'Hogar',catS:'hogar',ds:'Organizador multiusos plegable con 6 compartimentos. Ideal para ropa, juguetes y accesorios.',img:'https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=400&h=400&fit=crop&auto=format',rat:4.2,rev:43,bdg:'new'},
+    // BELLEZA
+    {id:15,nm:'Kit Cuidado Facial 5 en 1',pr:45,st:80,cat:'Belleza',catS:'bell',ds:'Kit completo: crema hidratante, sérum vitamina C, contorno de ojos, tónico y limpiador.',img:'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&h=400&fit=crop&auto=format',rat:4.5,rev:178,bdg:'new'},
+    {id:16,nm:'Paleta Maquillaje 48 Col.',pr:38,st:60,cat:'Belleza',catS:'bell',ds:'Paleta de sombras 48 colores mate y shimmer. Pigmentación intensa y larga duración.',img:'https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=400&h=400&fit=crop&auto=format',rat:4.7,rev:289,bdg:'sale'},
+    {id:17,nm:'Crema Hidratante Colágeno',pr:20,st:120,cat:'Belleza',catS:'bell',ds:'Crema hidratante de uso diario con vitamina E, colágeno y ácido hialurónico. Sin parabenos.',img:'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop&auto=format',rat:4.5,rev:201,bdg:'sale'},
+    {id:18,nm:'Perfume Floral Femenino',pr:55,st:45,cat:'Belleza',catS:'bell',ds:'Perfume floral con notas de jazmín, rosa y vainilla. 100ml. Importado de Asia.',img:'https://images.unsplash.com/photo-1541643600914-78b084683702?w=400&h=400&fit=crop&auto=format',rat:4.8,rev:134,bdg:'feat'},
+    // DEPORTES
+    {id:19,nm:'Zapatillas Deportivas Air',pr:120,st:15,cat:'Deportes',catS:'dep',ds:'Zapatillas ligeras y transpirables para alto rendimiento. Suela antideslizante y amortiguación premium.',img:'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop&auto=format',rat:4.7,rev:256,bdg:'feat'},
+    {id:20,nm:'Set Yoga Mat + 3 Bandas',pr:55,st:30,cat:'Deportes',catS:'dep',ds:'Mat de yoga antideslizante 6mm + 3 bandas elásticas de resistencia. Ideal para entrenar en casa.',img:'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop&auto=format',rat:4.8,rev:134,bdg:'feat'},
+    {id:21,nm:'Pelota Fútbol N°5',pr:45,st:55,cat:'Deportes',catS:'dep',ds:'Pelota reglamentaria N°5 de cuero sintético resistente. Apta para canchas de grass y loza.',img:'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=400&h=400&fit=crop&auto=format',rat:4.5,rev:76,bdg:'new'},
+    // JUGUETES
+    {id:22,nm:'Juego Construcción 100 Pzas',pr:35,st:45,cat:'Juguetes',catS:'juguetes',ds:'Juego creativo de construcción 100 piezas coloridas. Para niños de 3 a 12 años. Estimula la creatividad.',img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop&auto=format',rat:4.6,rev:198,bdg:'new'},
+    {id:23,nm:'Muñeca con Accesorios',pr:28,st:60,cat:'Juguetes',catS:'juguetes',ds:'Muñeca articulada con 15 accesorios incluidos: ropa, zapatos, peinetas y bolso.',img:'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400&h=400&fit=crop&auto=format',rat:4.5,rev:87,bdg:'new'},
+    // HERRAMIENTAS
+    {id:24,nm:'Set Herramientas 20 Pzas',pr:65,st:35,cat:'Herramientas',catS:'herramientas',ds:'Set completo de herramientas domésticas: destornilladores, llaves, martillo y alicates. Con caja.',img:'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=400&h=400&fit=crop&auto=format',rat:4.4,rev:91,bdg:'new'},
+    {id:25,nm:'Taladro Eléctrico 500W',pr:95,st:20,cat:'Herramientas',catS:'herramientas',ds:'Taladro eléctrico 500W con velocidad variable y reversa. Incluye 10 brocas de diferentes tamaños.',img:'https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400&h=400&fit=crop&auto=format',rat:4.6,rev:63,bdg:'new'},
   ];
 }
 
