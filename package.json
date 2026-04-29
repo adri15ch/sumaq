@@ -1,0 +1,18 @@
+{
+  "name": "sumaq-proxy",
+  "version": "2.0.0",
+  "description": "Proxy Node.js para SUMAQ — Odoo SaaS 19.2",
+  "main": "odoo-proxy.cjs",
+  "scripts": {
+    "start": "node odoo-proxy.cjs",
+    "dev": "node odoo-proxy.cjs"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "xmlrpc": "^1.3.2"
+  }
+}
