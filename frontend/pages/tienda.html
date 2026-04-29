@@ -677,6 +677,7 @@ footer{background:#212121;color:#aaa;padding:48px 0 0}
     <h3>🛒 Mi Carrito</h3>
     <div class="cart-hd-right">
       <span class="cart-count-badge" id="cartCountBadge">0 items</span>
+      <button onclick="vaciarCarrito()" style="background:rgba(255,255,255,.15);border:none;color:rgba(255,255,255,.8);font-size:11px;padding:4px 10px;border-radius:12px;cursor:pointer;margin-right:4px" title="Vaciar carrito">🗑️ Vaciar</button>
       <button class="cart-close" onclick="toggleCart()">✕</button>
     </div>
   </div>
@@ -794,7 +795,19 @@ const SESSION_KEY='ix_session';
 const CART_KEY='ix_cart';
 const IGV=0.045;
 
-let allP=[],filtP=[],cart=JSON.parse(localStorage.getItem(CART_KEY)||'[]');
+let allP=[],filtP=[];
+// Cargar carrito y deduplicar IDs repetidos (bug de sesiones anteriores)
+let cart=(()=>{
+  try{
+    const raw=JSON.parse(localStorage.getItem(CART_KEY)||'[]');
+    const seen={};
+    return raw.filter(c=>{
+      if(!c||!c.id)return false;
+      if(seen[c.id]){seen[c.id].qty+=c.qty;return false;}
+      seen[c.id]=c;return true;
+    });
+  }catch{return[];}
+})();
 let curCat='all',mQty=1,curModalIdx=0;
 let slideIdx=0,slideTimer=null;
 
@@ -890,9 +903,20 @@ function renderCart(){
 function changeQtyCart(i,d){cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);saveCart();renderCart();}
 function removeCart(i){cart.splice(i,1);saveCart();renderCart();}
 
+// Debounce para evitar doble click
+const _addDebounce={};
 function addToCartById(id,qty=1){
+  if(_addDebounce[id])return; // bloquear doble click
+  _addDebounce[id]=true;
+  setTimeout(()=>delete _addDebounce[id],800);
   const p=allP.find(x=>x.id===id)||filtP.find(x=>x.id===id);
   if(p)addToCart(p,qty);
+}
+function vaciarCarrito(){
+  if(!cart.length)return;
+  if(!confirm('¿Vaciar el carrito?'))return;
+  cart=[];saveCart();renderCart();
+  showToast('Carrito vaciado','');
 }
 function addToCart(p,qty=1){
   const ex=cart.find(c=>c.id===p.id);
