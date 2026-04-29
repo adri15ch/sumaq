@@ -257,7 +257,7 @@
 </div>
 
 <script>
-const PROXY='https://odoo-proxy-production-c0bc.up.railway.app';
+const PROXY='https://odoo-proxy-am0c.onrender.com';
 const ODOO={url:'https://sumaq.odoo.com',db:'sumaq',username:'lourdesadriana15n@gmail.com',password:'Lourdes2005*'};
 const GOOGLE_CLIENT_ID='1061083912804-8momh9jgi3glfn2e1jdd281ae0jpdsjq.apps.googleusercontent.com';
 const SESSION_KEY='ix_session';
@@ -353,7 +353,7 @@ function loginGoogle(){
   // Usar OAuth2 redirect flow (compatible con FedCM y todos los navegadores)
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
-    redirect_uri: window.location.origin + '/sumaq/frontend/pages/login.html',
+    redirect_uri: window.location.origin + window.location.pathname,
     response_type: 'token id_token',
     scope: 'openid email profile',
     nonce: Math.random().toString(36).substr(2),
