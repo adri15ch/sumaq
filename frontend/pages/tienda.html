@@ -229,6 +229,8 @@ header{background:var(--red);position:sticky;top:0;z-index:200;box-shadow:0 2px 
 .btn-add{width:100%;padding:10px;background:var(--red);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:auto}
 .btn-add:hover:not(:disabled){background:var(--red-dk);transform:translateY(-1px)}
 .btn-add:disabled{background:#E0E0E0;color:#9E9E9E;cursor:not-allowed}
+.btn-en-carrito{background:var(--green)!important;color:#fff!important}
+.btn-en-carrito:hover:not(:disabled){background:#1B5E20!important;transform:translateY(-1px)}
 .btn-add svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5}
 
 /* ══ SKELETON ══════════════════════════════════════════ */
@@ -900,30 +902,55 @@ function renderCart(){
   const ln=document.getElementById('loginNote');
   if(ln)ln.style.display=isLoggedIn()?'none':'block';
 }
-function changeQtyCart(i,d){cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);saveCart();renderCart();}
-function removeCart(i){cart.splice(i,1);saveCart();renderCart();}
+function changeQtyCart(i,d){cart[i].qty+=d;if(cart[i].qty<=0)cart.splice(i,1);saveCart();renderCart();updateAllCartButtons();}
+function removeCart(i){cart.splice(i,1);saveCart();renderCart();updateAllCartButtons();}
 
-// Debounce para evitar doble click
-const _addDebounce={};
-function addToCartById(id,qty=1){
-  if(_addDebounce[id])return; // bloquear doble click
-  _addDebounce[id]=true;
-  setTimeout(()=>delete _addDebounce[id],800);
-  const p=allP.find(x=>x.id===id)||filtP.find(x=>x.id===id);
-  if(p)addToCart(p,qty);
-}
 function vaciarCarrito(){
   if(!cart.length)return;
   if(!confirm('¿Vaciar el carrito?'))return;
-  cart=[];saveCart();renderCart();
+  cart=[];saveCart();renderCart();updateAllCartButtons();
   showToast('Carrito vaciado','');
 }
+
 function addToCart(p,qty=1){
   const ex=cart.find(c=>c.id===p.id);
   if(ex)ex.qty+=qty;
   else cart.push({id:p.id,nm:p.nm,pr:p.pr,qty,img:p.img||''});
-  saveCart();renderCart();
+  saveCart();renderCart();updateAllCartButtons();
   showToast(`✅ "${p.nm.substring(0,28)}" agregado`,'ok');
+}
+
+// Maneja el clic en "Agregar" — si ya está en carrito, abre el drawer en vez de agregar
+function handleAgregar(id,btn){
+  const enCarrito=cart.find(c=>c.id===id);
+  if(enCarrito){
+    // Ya está en carrito → abrir drawer para que el usuario gestione la cantidad
+    toggleCart();
+    return;
+  }
+  const p=allP.find(x=>x.id===id)||filtP.find(x=>x.id===id);
+  if(p)addToCart(p,1);
+}
+
+// Actualiza TODOS los botones de producto según el estado actual del carrito
+function updateAllCartButtons(){
+  document.querySelectorAll('[id^="btn-p"]').forEach(btn=>{
+    const id=parseInt(btn.id.replace('btn-p',''));
+    if(!id||isNaN(id))return;
+    const enCarrito=cart.find(c=>c.id===id);
+    const p=allP.find(x=>x.id===id)||filtP.find(x=>x.id===id);
+    const agotado=p&&p.st===0;
+    if(agotado){btn.disabled=true;btn.innerHTML='Sin stock';btn.className='btn-add';return;}
+    if(enCarrito){
+      btn.innerHTML=`✓ En carrito (${enCarrito.qty})`;
+      btn.className='btn-add btn-en-carrito';
+      btn.disabled=false;
+    }else{
+      btn.innerHTML=`<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Agregar`;
+      btn.className='btn-add';
+      btn.disabled=false;
+    }
+  });
 }
 
 // ══════════════════════════════════════════════════════
@@ -1048,6 +1075,7 @@ async function loadProds(){
   }catch{demoProd();}
   filtP=[...allP];
   renderAll();
+  updateAllCartButtons();
 }
 
 // ══════════════════════════════════════════════════════
@@ -1056,11 +1084,18 @@ async function loadProds(){
 function starHTML(r){let h='';for(let i=1;i<=5;i++)h+=`<svg class="star ${i<=Math.floor(r)?'sf':'se'}" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;return h;}
 
 function buildCard(p,idx){
-  const tot=(p.pr*1.18).toFixed(2);
-  const orig=(p.pr*1.18/0.82).toFixed(2);
+  const tot=(p.pr*1.045).toFixed(2);
+  const orig=(p.pr*1.045/0.9).toFixed(2);
   const agotado=p.st===0;
   const low=p.st>0&&p.st<=5;
-  return`<div class="pc" data-idx="${idx}">
+  const enCarrito=cart.find(c=>c.id===p.id);
+  const btnClass=enCarrito?'btn-add btn-en-carrito':'btn-add';
+  const btnTxt=agotado
+    ?'Sin stock'
+    :enCarrito
+      ?`✓ En carrito (${enCarrito.qty})`
+      :`<svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Agregar`;
+  return`<div class="pc" data-pid="${p.id}" data-idx="${idx}">
     <div class="pc-img">
       <img src="${p.img}" alt="${esc(p.nm)}" loading="lazy"/>
       <span class="pc-disc">-4.5%</span>
@@ -1080,10 +1115,10 @@ function buildCard(p,idx){
         <div class="pc-price-orig">Antes S/ ${orig}</div>
         <div class="pc-price-tag">PRECIO INTERNET</div>
         <div class="pc-price-main">S/ ${tot}</div>
-        <div class="pc-price-igv">Precio incluye IGV</div>
+        <div class="pc-price-igv">Precio incluye IGV (4.5%)</div>
       </div>
-      <button class="btn-add" onclick="event.stopPropagation();addToCartById(${p.id})" ${agotado?'disabled':''}>
-        ${agotado?'Sin stock':`<svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Agregar`}
+      <button class="${btnClass}" id="btn-p${p.id}" onclick="event.stopPropagation();handleAgregar(${p.id},this)" ${agotado?'disabled':''}>
+        ${btnTxt}
       </button>
     </div>
   </div>`;
