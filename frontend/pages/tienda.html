@@ -1173,8 +1173,9 @@ function scrollCarousel(id,dir){const c=document.getElementById(id);if(c)c.scrol
 function abrirModal(idx){
   const p=filtP[idx];if(!p)return;
   curModalIdx=idx;mQty=1;
-  const tot=(p.pr*1.18).toFixed(2);
-  const orig=(p.pr*1.18/0.82).toFixed(2);
+  const enCarrito=cart.find(c=>c.id===p.id); // ← variable necesaria en el template
+  const tot=(p.pr*1.045).toFixed(2);
+  const orig=(p.pr*1.045/0.9).toFixed(2);
   const agotado=p.st===0;
   const low=p.st>0&&p.st<=5;
   const sdCls=agotado?'out':low?'low':'ok';
