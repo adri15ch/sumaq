@@ -655,10 +655,12 @@ async function realizarPedido() {
     const partnerId = clienteData.cliente.id;
 
     // 2. Crear orden en Odoo
+    // Enviamos el precio CON IGV 4.5% ya incluido para que Odoo muestre
+    // lo que el cliente realmente pagó (el proxy limpia los impuestos de Odoo)
     const lineas = cart.map(c => ({
       product_id: c.oId || c.id,
       qty: c.qty,
-      price: c.pr || c.precio || 0,
+      price: +((c.pr || c.precio || 0) * (1 + IGV_RATE)).toFixed(2),
       name: c.nm || c.nombre || '',
     }));
 

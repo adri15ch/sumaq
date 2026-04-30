@@ -232,8 +232,10 @@ function renderPedidos(lista){
   const c=document.getElementById('listaPedidos');
   if(!lista.length){c.innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">No hay pedidos aquí</div><p class="empty-sub">No encontramos pedidos con ese filtro.</p><button class="btn btn-primary" onclick="filtrar('todos',document.querySelector('.filter-btn'))">Ver todos</button></div>`;return;}
   c.innerHTML=lista.map(p=>{
-    const fecha=new Date(p.date_order).toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'});
-    const hora=new Date(p.date_order).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+    // Odoo devuelve fechas en UTC sin sufijo 'Z' — agregarlo para forzar UTC, luego mostrar en hora Lima
+    const dateUTC=new Date((p.date_order||'').replace(' ','T')+'Z');
+    const fecha=dateUTC.toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric',timeZone:'America/Lima'});
+    const hora=dateUTC.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit',timeZone:'America/Lima'});
     return`<div class="pedido-card" id="card-${p.id}">
       <div class="pc-hd">
         <div class="pc-hd-left"><span class="pc-orden">${esc(p.name)}</span><span class="pc-fecha">📅 ${fecha} · ${hora}</span></div>
@@ -281,7 +283,8 @@ async function abrirDetalle(id){
   try{
     const r=await fetch(`${PROXY}/api/odoo/pedido/lineas`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order_id:id})});
     const d=await r.json();const lineas=d.lineas||[];
-    const fecha=new Date(p.date_order).toLocaleString('es-PE',{dateStyle:'full',timeStyle:'short'});
+    const dateUTC2=new Date((p.date_order||'').replace(' ','T')+'Z');
+    const fecha=dateUTC2.toLocaleString('es-PE',{dateStyle:'full',timeStyle:'short',timeZone:'America/Lima'});
     const cliente=Array.isArray(p.partner_id)?esc(p.partner_id[1]):'—';
     document.getElementById('detBody').innerHTML=`
       <div class="det-section"><h4>Información del pedido</h4>
