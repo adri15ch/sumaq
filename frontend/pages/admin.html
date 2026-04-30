@@ -576,9 +576,22 @@ function adminLogout(){localStorage.removeItem(ADMIN_KEY);window.location.reload
 // ── INIT ──
 window.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('tb-date').textContent=new Date().toLocaleDateString('es-PE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  // SIEMPRE restaurar contraseña antes de verificar sesión guardada
+  const sp=localStorage.getItem('odoo_pass');
+  if(sp){ODOO.password=sp;}
   const admin=localStorage.getItem(ADMIN_KEY);
-  if(admin){try{const a=JSON.parse(admin);if(Date.now()<a.expires){mostrarPanel(a.email);return;}}catch{}}
-  const sp=localStorage.getItem('odoo_pass');if(sp)ODOO.password=sp;
+  if(admin){
+    try{
+      const a=JSON.parse(admin);
+      if(Date.now()<a.expires&&ODOO.password){
+        ODOO.username=a.email||ODOO.username;
+        mostrarPanel(a.email);
+        return;
+      }else{
+        localStorage.removeItem(ADMIN_KEY); // sesión expirada o sin contraseña
+      }
+    }catch{localStorage.removeItem(ADMIN_KEY);}
+  }
 });
 
 // ── NAVIGATION ──
@@ -826,11 +839,23 @@ function filtrarProductos(){
   renderTablaProds(allProds.filter(p=>!q||p.name.toLowerCase().includes(q)));
 }
 
-function abrirModalProducto(prod=null){
+let prodEditandoId=null;
+
+async function abrirModalProducto(prod=null){
+  prodEditandoId=prod?prod.id:null;
   document.getElementById('modal-prod-ttl').textContent=prod?'Editar producto':'Nuevo producto';
   document.getElementById('prod-nm').value=prod?prod.name:'';
   document.getElementById('prod-pr').value=prod?prod.list_price:'';
   document.getElementById('prod-st').value=prod?prod.qty_available:'';
+  // Cargar categorías desde Odoo
+  const sel=document.getElementById('prod-cat-sel');
+  sel.innerHTML='<option value="">Cargando categorías...</option>';
+  try{
+    const cats=await odooRPC('product.category','search_read',[[]],{fields:['id','name'],limit:100,order:'name asc'});
+    sel.innerHTML='<option value="">-- Sin categoría --</option>'+(cats||[]).map(c=>`<option value="${c.id}" ${prod&&prod.categ_id&&prod.categ_id[0]===c.id?'selected':''}>${c.name}</option>`).join('');
+  }catch{
+    sel.innerHTML='<option value="">No se pudieron cargar</option>';
+  }
   document.getElementById('modal-prod').classList.add('open');
 }
 
@@ -842,17 +867,29 @@ function editarProducto(id){
 async function guardarProducto(){
   const nm=document.getElementById('prod-nm').value.trim();
   const pr=parseFloat(document.getElementById('prod-pr').value);
-  const st=parseInt(document.getElementById('prod-st').value);
-  const cat=document.getElementById('prod-cat-sel').value;
-  if(!nm||!pr||isNaN(st)){showToast('Por favor completa todos los campos','error');return;}
+  const cat=parseInt(document.getElementById('prod-cat-sel').value)||false;
+  if(!nm||isNaN(pr)||pr<=0){showToast('Completa nombre y precio','error');return;}
+  const vals={name:nm,list_price:pr,sale_ok:true};
+  if(cat)vals.categ_id=cat;
   try{
-    await odooRPC('product.template','create',[{name:nm,list_price:pr,type:'product',sale_ok:true}]);
-    cerrarModalProd();cargarProductos();
-    showToast('Producto creado en Odoo correctamente','success');
-  }catch(e){showToast('Error al crear el producto. Intenta desde Odoo.','error');}
+    if(prodEditandoId){
+      // EDITAR producto existente
+      await odooRPC('product.template','write',[[prodEditandoId],vals]);
+      showToast('✅ Producto actualizado en Odoo','success');
+    }else{
+      // CREAR nuevo producto
+      vals.type='product';
+      await odooRPC('product.template','create',[vals]);
+      showToast('✅ Producto creado en Odoo','success');
+    }
+    cerrarModalProd();
+    cargarProductos();
+  }catch(e){
+    showToast('Error: '+e.message,'error');
+  }
 }
 
-function cerrarModalProd(){document.getElementById('modal-prod').classList.remove('open');}
+function cerrarModalProd(){document.getElementById('modal-prod').classList.remove('open');prodEditandoId=null;}
 
 // ── INVENTARIO ──
 async function cargarInventario(){
