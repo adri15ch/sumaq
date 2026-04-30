@@ -1070,8 +1070,19 @@ async function loadProds(){
   try{
     const r=await fetch(PROXY+'/api/odoo/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
     const d=await r.json();
-    if(d.success&&d.productos?.length>0){allP=d.productos.map(mapProduct);}
-    else demoProd();
+    if(d.success&&d.productos?.length>0){
+      allP=d.productos.map(mapProduct);
+      // Si el carrito tiene productos demo (IDs pequeños 1-100) y ahora
+      // cargaron productos de Odoo (IDs grandes), limpiar el carrito demo
+      // para evitar que aparezcan productos huérfanos en checkout
+      const odooIds=new Set(allP.map(p=>p.id));
+      const demoIdsEnCarrito=cart.filter(c=>!odooIds.has(c.id));
+      if(demoIdsEnCarrito.length>0&&cart.length>0){
+        // Hay items demo que no existen en Odoo → limpiar esos items
+        cart=cart.filter(c=>odooIds.has(c.id));
+        saveCart();
+      }
+    }else demoProd();
   }catch{demoProd();}
   filtP=[...allP];
   renderAll();
@@ -1193,21 +1204,45 @@ function abrirModal(idx){
         <span class="qty-num" id="modalQtyNum">1</span>
         <button class="qty-btn" onclick="chgQty(1)">+</button>
       </div>
-      <button class="btn-modal-add" id="btnModalAdd" onclick="addFromModal()" ${agotado?'disabled':''}>
-        ${agotado?'😔 Sin stock disponible':'🛒  Agregar al carrito'}
+      <button class="btn-modal-add" id="btnModalAdd" onclick="addDesdeModal()" ${agotado?'disabled':''}>
+        ${agotado?'😔 Sin stock disponible':enCarrito?`✓ Ya en carrito (${enCarrito.qty}) — Ver carrito`:'🛒  Agregar al carrito'}
       </button>
-      <button class="btn-modal-now" onclick="addFromModal();cerrarModal();irCheckout()">Comprar ahora</button>
+      <button class="btn-modal-now" onclick="comprarAhora()">Comprar ahora →</button>
     </div>`;
   document.getElementById('modalOv').classList.add('open');
 }
 function cerrarModal(){document.getElementById('modalOv').classList.remove('open');}
 function chgQty(d){mQty=Math.max(1,Math.min(99,mQty+d));document.getElementById('modalQtyNum').textContent=mQty;}
-function addFromModal(){
+// Agregar desde modal — nunca duplica
+function addDesdeModal(){
   const p=filtP[curModalIdx];if(!p)return;
+  const enCarrito=cart.find(c=>c.id===p.id);
+  if(enCarrito){
+    // Ya está en carrito → abrir carrito, no agregar de nuevo
+    cerrarModal();
+    toggleCart();
+    return;
+  }
+  // No está → agregar la cantidad elegida
   addToCart(p,mQty);
   const b=document.getElementById('btnModalAdd');
-  if(b&&!b.disabled){const o=b.innerHTML;b.innerHTML='✅ ¡Agregado al carrito!';b.style.background='var(--green)';setTimeout(()=>{b.innerHTML=o;b.style.background='';},1500);}
+  if(b){b.innerHTML='✅ ¡Agregado al carrito!';b.style.background='var(--green)';b.disabled=true;}
 }
+
+// Comprar ahora — agrega SOLO si no está en carrito, luego va al checkout
+function comprarAhora(){
+  const p=filtP[curModalIdx];if(!p)return;
+  const enCarrito=cart.find(c=>c.id===p.id);
+  if(!enCarrito){
+    // Solo agrega si no está ya
+    addToCart(p,mQty);
+  }
+  cerrarModal();
+  irCheckout();
+}
+
+// Mantener compatibilidad con código que llame addFromModal
+function addFromModal(){addDesdeModal();}
 
 // ══════════════════════════════════════════════════════
 // FILTROS Y BÚSQUEDA
