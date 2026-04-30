@@ -1107,7 +1107,8 @@ function buildCard(p,idx){
       ?`✓ En carrito (${enCarrito.qty})`
       :`<svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Agregar`;
   return`<div class="pc" data-pid="${p.id}" data-idx="${idx}">
-    <div class="pc-img">
+    <!-- ÁREA CLICKABLE → abre modal (imagen + cuerpo) -->
+    <div class="pc-img" onclick="abrirModal(${idx})" style="cursor:pointer">
       <img src="${p.img}" alt="${esc(p.nm)}" loading="lazy"/>
       <span class="pc-disc">-4.5%</span>
       <button class="pc-heart" onclick="event.stopPropagation();this.classList.toggle('fav')" title="Favorito">
@@ -1115,10 +1116,11 @@ function buildCard(p,idx){
       </button>
       ${agotado?'<span class="pc-stock-badge">Sin stock</span>':low?`<span class="pc-stock-badge">¡Solo ${p.st}!</span>`:''}
       <div class="pc-hover">
-        <button class="btn-quick-view" onclick="event.stopPropagation();abrirModal(${idx})">👁 Ver detalle</button>
+        <span style="background:rgba(255,255,255,.95);color:#333;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600">👁 Ver detalle</span>
       </div>
     </div>
-    <div class="pc-body">
+    <!-- Cuerpo clickable → abre modal -->
+    <div class="pc-body" onclick="abrirModal(${idx})" style="cursor:pointer;flex:1">
       <div class="pc-brand">${esc(p.cat)}</div>
       <div class="pc-name">${esc(p.nm)}</div>
       <div class="pc-stars"><div class="stars">${starHTML(p.rat)}</div><span class="pc-rev">(${p.rev})</span></div>
@@ -1128,7 +1130,10 @@ function buildCard(p,idx){
         <div class="pc-price-main">S/ ${tot}</div>
         <div class="pc-price-igv">Precio incluye IGV (4.5%)</div>
       </div>
-      <button class="${btnClass}" id="btn-p${p.id}" onclick="event.stopPropagation();handleAgregar(${p.id},this)" ${agotado?'disabled':''}>
+    </div>
+    <!-- BOTÓN AGREGAR — separado del área clickable, no interfiere con el modal -->
+    <div style="padding:0 14px 14px" onclick="event.stopPropagation()">
+      <button class="${btnClass}" id="btn-p${p.id}" onclick="handleAgregar(${p.id},this)" ${agotado?'disabled':''}>
         ${btnTxt}
       </button>
     </div>
@@ -1144,15 +1149,20 @@ function renderAll(){
     return;
   }
   document.getElementById('gridCount').textContent=filtP.length+' producto'+(filtP.length!==1?'s':'');
+  // Las cards usan onclick inline — no se necesita addEventListener
   grid.innerHTML=filtP.map((p,i)=>buildCard(p,i)).join('');
-  grid.querySelectorAll('.pc').forEach(c=>c.addEventListener('click',function(){abrirModal(+this.dataset.idx);}));
 
-  // Carousels (solo en vista home)
+  // Carousels — usar índice en allP para abrir modal del producto correcto
   const cv=document.getElementById('carVendidos');
   const cn=document.getElementById('carNuevos');
-  if(cv)cv.innerHTML=allP.slice(0,8).map((p,i)=>buildCard(p,i)).join('');
-  if(cn)cn.innerHTML=allP.slice(8,16).map((p,i)=>buildCard(p,i+8)).join('');
-  [cv,cn].forEach(c=>{if(c)c.querySelectorAll('.pc').forEach(el=>el.addEventListener('click',function(){const p=allP[+this.dataset.idx];if(p){const fi=filtP.indexOf(p);abrirModal(fi>=0?fi:0);};}));});
+  if(cv)cv.innerHTML=allP.slice(0,8).map((p,i)=>{
+    const fi=filtP.findIndex(x=>x.id===p.id);
+    return buildCard(p,fi>=0?fi:i);
+  }).join('');
+  if(cn)cn.innerHTML=allP.slice(8,16).map((p,i)=>{
+    const fi=filtP.findIndex(x=>x.id===p.id);
+    return buildCard(p,fi>=0?fi:i+8);
+  }).join('');
 }
 
 function scrollCarousel(id,dir){const c=document.getElementById(id);if(c)c.scrollBy({left:dir*440,behavior:'smooth'});}
