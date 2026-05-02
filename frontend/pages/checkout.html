@@ -364,10 +364,10 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
         </div>
         <div class="summary-items" id="summaryItems"></div>
         <div class="summary-totals">
-          <div class="s-row"><span>Subtotal</span><span id="sSubtotal">S/ 0.00</span></div>
-          <div class="s-row"><span>IGV (4.5%)</span><span id="sIgv">S/ 0.00</span></div>
+          <div class="s-row"><span>Subtotal (IGV incluido)</span><span id="sSubtotal">S/ 0.00</span></div>
+          <div class="s-row" style="font-size:11px;color:var(--t3)"><span>↳ IGV 4.5% incluido</span><span id="sIgv">S/ 0.00</span></div>
           <div class="s-row free" id="sEnvioRow"><span>Envío</span><span id="sEnvio">Gratis</span></div>
-          <div class="s-row total"><span>Total</span><span id="sTotal">S/ 0.00</span></div>
+          <div class="s-row total"><span>Total a pagar</span><span id="sTotal">S/ 0.00</span></div>
           <div class="s-igv-note">Precio incluye IGV según Ley Peruana</div>
           <button class="btn-order" id="btnOrder" onclick="realizarPedido()">
             <span id="btnOrderTxt">✅ Confirmar pedido</span>
@@ -547,24 +547,27 @@ function selectPago(tipo, el) {
 // RENDERIZAR RESUMEN
 // ══════════════════════════════════════════════════════
 function calcTotales() {
-  const subtotal = cart.reduce((s, c) => s + (c.pr || c.precio || 0) * c.qty, 0);
-  const igv = subtotal * IGV_RATE;
-  const costoEnvio = pagoSeleccionado === 'efectivo' ? ENVIO_EFECTIVO : (subtotal >= FREE_SHIP_MIN ? 0 : 0);
-  const total = subtotal + igv + costoEnvio;
+  // subtotalBase = suma de precios SIN IGV (lo que almacena el carrito)
+  const subtotalBase = cart.reduce((s, c) => s + (c.pr || c.precio || 0) * c.qty, 0);
+  const igv = subtotalBase * IGV_RATE;
+  // subtotal que ve el cliente = con IGV (igual que en la tienda)
+  const subtotalConIgv = subtotalBase + igv;
+  const costoEnvio = pagoSeleccionado === 'efectivo' ? ENVIO_EFECTIVO : 0;
+  const total = subtotalConIgv + costoEnvio;
 
-  document.getElementById('sSubtotal').textContent = `S/ ${subtotal.toFixed(2)}`;
-  document.getElementById('sIgv').textContent = `S/ ${igv.toFixed(2)}`;
+  document.getElementById('sSubtotal').textContent = `S/ ${subtotalConIgv.toFixed(2)}`;
+  document.getElementById('sIgv').textContent = `S/ ${igv.toFixed(2)} (incl.)`;
   const envioEl = document.getElementById('sEnvio');
   const envioRow = document.getElementById('sEnvioRow');
   if (costoEnvio > 0) {
     envioEl.textContent = `S/ ${costoEnvio.toFixed(2)}`;
     envioRow.classList.remove('free');
   } else {
-    envioEl.textContent = subtotal >= FREE_SHIP_MIN ? 'Gratis 🎉' : 'Gratis';
+    envioEl.textContent = 'Gratis 🎉';
     envioRow.classList.add('free');
   }
   document.getElementById('sTotal').textContent = `S/ ${total.toFixed(2)}`;
-  return { subtotal, igv, costoEnvio, total };
+  return { subtotal: subtotalBase, igv, costoEnvio, total };
 }
 
 function renderResumen() {
@@ -581,7 +584,7 @@ function renderResumen() {
         <div class="s-item-name">${sanitize(c.nm || c.nombre)}</div>
         <div class="s-item-qty">× ${c.qty}</div>
       </div>
-      <div class="s-item-price">S/ ${(precio * c.qty).toFixed(2)}</div>
+      <div class="s-item-price">S/ ${(precio * (1 + IGV_RATE) * c.qty).toFixed(2)}</div>
     </div>`;
   }).join('');
   calcTotales();
