@@ -1155,7 +1155,7 @@ function renderKardex(d){
       !(Array.isArray(m.location_id)&&m.location_id[1]?.toLowerCase().includes('wh'));
 
     const cant=Number(m.product_uom_qty||0);
-    const costo=Number(m.price_unit||0)||Number(prod?.standard_price||0);
+    const costo=Number(prod?.standard_price||0);
 
     // Determinar si es entrada o salida según los nombres de ubicación
     const destNm=(Array.isArray(m.location_dest_id)?m.location_dest_id[1]:'').toLowerCase();
@@ -1165,7 +1165,7 @@ function renderKardex(d){
     const esSal=origNm.includes('stock')||origNm.includes('wh/')||origNm.includes('almacén');
 
     const fecha=m.date?(new Date(m.date.replace(' ','T')+'Z')).toLocaleDateString('es-PE',{timeZone:'America/Lima'}):'—';
-    const doc=m.reference||m.name||'—';
+    const doc=Array.isArray(m.picking_id)?m.picking_id[1]:(m.reference||m.origin||'—');
     const desc=`${m.origin||''} | ${Array.isArray(m.location_id)?m.location_id[1]:''} → ${Array.isArray(m.location_dest_id)?m.location_dest_id[1]:''}`;
 
     let fila={fecha,doc,desc,entCant:0,entCosto:0,entTotal:0,salCant:0,salCosto:0,salTotal:0};
@@ -1275,9 +1275,9 @@ function descargarKardex(){
 
   for(const m of movs){
     const cant=Number(m.product_uom_qty||0);
-    const costo=Number(m.price_unit||0)||costoAcum;
+    const costo=costoAcum||Number(prod?.standard_price||0);
     const fecha=m.date?(new Date(m.date.replace(' ','T')+'Z')).toLocaleDateString('es-PE',{timeZone:'America/Lima'}):'';
-    const doc=m.reference||m.name||'';
+    const doc=Array.isArray(m.picking_id)?m.picking_id[1]:(m.reference||m.origin||'');
     const destNm=(Array.isArray(m.location_dest_id)?m.location_dest_id[1]:'').toLowerCase();
     const origNm=(Array.isArray(m.location_id)?m.location_id[1]:'').toLowerCase();
     const esEnt=destNm.includes('stock')||destNm.includes('wh/')||destNm.includes('almacén')||destNm.includes('input');
