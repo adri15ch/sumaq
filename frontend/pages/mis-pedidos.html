@@ -203,9 +203,16 @@ header{background:var(--red);position:sticky;top:0;z-index:100;box-shadow:0 2px 
 const PROXY='https://odoo-proxy-am0c.onrender.com';
 const SESSION_KEY='ix_session';
 const CART_KEY='ix_cart';
+const IGV_SUMAQ=0.045;   // IGV que usa SUMAQ frontend (4.5%)
+const IGV_ODOO=0.18;     // IGV que aplica Odoo internamente (18%)
+// Factor de conversión: convierte total de Odoo (con 18%) al total real del cliente (con 4.5%)
+const FACTOR_IGV=((1+IGV_SUMAQ)/(1+IGV_ODOO)); // ≈ 0.8856
 let todosPedidos=[],session=null;
 
 function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+// Convierte el total de Odoo (con 18% IGV) al total real que pagó el cliente (con 4.5% IGV)
+function totalReal(odooAmount){return Number(odooAmount||0)*FACTOR_IGV;}
 
 function getSession(){
   try{const r=localStorage.getItem(SESSION_KEY);if(!r)return null;const s=JSON.parse(r);const exp=s.expiry||s.expires;if(exp&&Date.now()>exp){localStorage.removeItem(SESSION_KEY);return null;}if(!s.email)return null;return s;}catch{return null;}
@@ -244,7 +251,7 @@ function renderPedidos(lista){
       <div class="pc-body">
         <div class="pc-items" id="items-${p.id}"><div style="color:var(--t3);font-size:13px;display:flex;align-items:center;gap:8px"><div class="spinner-ring spinner-sm"></div>Cargando…</div></div>
         <div class="pc-footer">
-          <div class="pc-total">Total: <span>S/ ${Number(p.amount_total).toFixed(2)}</span></div>
+          <div class="pc-total">Total: <span>S/ ${totalReal(p.amount_total).toFixed(2)}</span></div>
           <div class="pc-actions">
             <button class="btn btn-outline btn-sm" onclick="toggleTimeline(${p.id})" id="tlBtn-${p.id}">📍 Seguimiento</button>
             <button class="btn btn-ghost btn-sm" onclick="abrirDetalle(${p.id})">📋 Detalle</button>
@@ -265,7 +272,7 @@ async function cargarLineas(id){
     const c=document.getElementById(`items-${id}`);if(!c)return;
     if(!lineas.length){c.innerHTML='<div style="font-size:13px;color:var(--t3)">Sin detalle disponible</div>';return;}
     const vis=lineas.slice(0,4),resto=lineas.length-vis.length;
-    c.innerHTML=vis.map(l=>`<div class="pc-item"><div class="pc-item-img-ph">📦</div><div style="flex:1;min-width:0"><div class="pc-item-name">${esc(Array.isArray(l.product_id)?l.product_id[1]:l.name||'—')}</div><div class="pc-item-qty">Cantidad: ${l.product_uom_qty||1}</div></div><div class="pc-item-price">S/ ${Number(l.price_subtotal||0).toFixed(2)}</div></div>`).join('')+(resto>0?`<div class="pc-more">+${resto} producto${resto!==1?'s':''} más</div>`:'');
+    c.innerHTML=vis.map(l=>`<div class="pc-item"><div class="pc-item-img-ph">📦</div><div style="flex:1;min-width:0"><div class="pc-item-name">${esc(Array.isArray(l.product_id)?l.product_id[1]:l.name||'—')}</div><div class="pc-item-qty">Cantidad: ${l.product_uom_qty||1}</div></div><div class="pc-item-price">S/ ${((Number(l.price_unit||0)*(l.product_uom_qty||1))*(1+IGV_SUMAQ)).toFixed(2)}</div></div>`).join('')+(resto>0?`<div class="pc-more">+${resto} producto${resto!==1?'s':''} más</div>`:'');
   }catch{}
 }
 
@@ -294,8 +301,8 @@ async function abrirDetalle(id){
         <div class="det-row"><span class="lbl">Estado</span><span class="val">${estadoBadge(p.state)}</span></div>
       </div>
       <div class="det-section"><h4>Productos (${lineas.length})</h4>
-        ${lineas.map(l=>`<div class="det-item"><div class="pc-item-img-ph" style="width:40px;height:40px;font-size:18px">📦</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${esc(Array.isArray(l.product_id)?l.product_id[1]:l.name||'—')}</div><div style="font-size:11px;color:var(--t3)">S/ ${Number(l.price_unit||0).toFixed(2)} × ${l.product_uom_qty||1}</div></div><div style="font-size:14px;font-weight:700">S/ ${Number(l.price_subtotal||0).toFixed(2)}</div></div>`).join('')}
-        <div class="det-total"><span>Total</span><span>S/ ${Number(p.amount_total).toFixed(2)}</span></div>
+        ${lineas.map(l=>`<div class="det-item"><div class="pc-item-img-ph" style="width:40px;height:40px;font-size:18px">📦</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${esc(Array.isArray(l.product_id)?l.product_id[1]:l.name||'—')}</div><div style="font-size:11px;color:var(--t3)">S/ ${(Number(l.price_unit||0)*(1+IGV_SUMAQ)).toFixed(2)} × ${l.product_uom_qty||1}</div></div><div style="font-size:14px;font-weight:700">S/ ${((Number(l.price_unit||0)*(l.product_uom_qty||1))*(1+IGV_SUMAQ)).toFixed(2)}</div></div>`).join('')}
+        <div class="det-total"><span>Total</span><span>S/ ${totalReal(p.amount_total).toFixed(2)}</span></div>
       </div>
       <div class="det-section"><h4>Seguimiento</h4>${timelineHTML(p.state)}</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;padding-top:4px">
@@ -337,7 +344,7 @@ function actualizarStats(){
   document.getElementById('statTotal').textContent=todosPedidos.length;
   document.getElementById('statPending').textContent=todosPedidos.filter(p=>['draft','sent','sale'].includes(p.state)).length;
   document.getElementById('statDone').textContent=todosPedidos.filter(p=>p.state==='done').length;
-  const g=todosPedidos.filter(p=>['sale','done'].includes(p.state)).reduce((s,p)=>s+Number(p.amount_total||0),0);
+  const g=todosPedidos.filter(p=>['sale','done'].includes(p.state)).reduce((s,p)=>s+totalReal(p.amount_total),0);
   document.getElementById('statGasto').textContent=`S/ ${g.toFixed(0)}`;
   document.getElementById('statsGrid').style.display='grid';
   ['todos','draft','sale','done','cancel'].forEach(s=>{
