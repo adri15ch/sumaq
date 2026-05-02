@@ -255,6 +255,10 @@
       <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       Reportes
     </div>
+    <div class="sb-item" onclick="showPage('kardex',this)">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Kardex
+    </div>
   </nav>
   <div class="sb-footer">
     <div class="sb-user">
@@ -474,6 +478,109 @@
       <canvas id="chart-reporte" height="100"></canvas>
     </div>
   </div>
+
+  <!-- KARDEX -->
+  <div class="page" id="page-kardex">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div>
+        <h2 style="font-size:20px;font-weight:800;color:var(--g900)">📋 Kardex de Inventario</h2>
+        <p style="font-size:13px;color:var(--g500);margin-top:2px">Registro detallado de entradas y salidas por producto</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-primary" onclick="generarKardex()" style="padding:10px 20px;font-size:13px">🔍 Generar Kardex</button>
+        <button class="btn-secondary" id="btnDescargarKardex" onclick="descargarKardex()" style="display:none;padding:10px 20px;font-size:13px">⬇️ Descargar CSV</button>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div style="background:#fff;border-radius:var(--rl);padding:20px;box-shadow:var(--sh);margin-bottom:20px;display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:14px;align-items:end">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Producto *</label>
+        <select id="kardexProducto" class="form-ctrl" style="width:100%;padding:9px 12px;border:1.5px solid var(--g200);border-radius:var(--r);font-size:13px;outline:none;font-family:var(--font)">
+          <option value="">-- Selecciona un producto --</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Fecha inicio</label>
+        <input type="date" id="kardexFechaDesde" style="width:100%;padding:9px 12px;border:1.5px solid var(--g200);border-radius:var(--r);font-size:13px;outline:none;font-family:var(--font)"/>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Fecha fin</label>
+        <input type="date" id="kardexFechaHasta" style="width:100%;padding:9px 12px;border:1.5px solid var(--g200);border-radius:var(--r);font-size:13px;outline:none;font-family:var(--font)"/>
+      </div>
+      <div>
+        <button onclick="generarKardex()" style="padding:10px 18px;background:var(--primary);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);height:40px">Generar</button>
+      </div>
+    </div>
+
+    <!-- Encabezado del Kardex (se muestra después de generar) -->
+    <div id="kardexHeader" style="display:none;background:#fff;border-radius:var(--rl);padding:20px;box-shadow:var(--sh);margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+        <div><div style="font-size:10px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.5px">Empresa</div><div style="font-size:14px;font-weight:700;color:var(--g900);margin-top:3px">SUMAQ Importadora S.A.C.</div></div>
+        <div><div style="font-size:10px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.5px">Producto</div><div style="font-size:14px;font-weight:700;color:var(--g900);margin-top:3px" id="kardexNombreProd">—</div></div>
+        <div><div style="font-size:10px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.5px">Código</div><div style="font-size:14px;font-weight:700;color:var(--g900);margin-top:3px" id="kardexCodigo">—</div></div>
+        <div><div style="font-size:10px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.5px">Categoría</div><div style="font-size:13px;color:var(--g700);margin-top:3px" id="kardexCategoria">—</div></div>
+        <div><div style="font-size:10px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.5px">Unidad de medida</div><div style="font-size:13px;color:var(--g700);margin-top:3px" id="kardexUOM">und</div></div>
+        <div><div style="font-size:10px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.5px">Stock actual</div><div style="font-size:18px;font-weight:800;color:var(--primary);margin-top:3px" id="kardexStockActual">0</div></div>
+        <div><div style="font-size:10px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.5px">Precio de venta</div><div style="font-size:13px;color:var(--g700);margin-top:3px" id="kardexPrecioVenta">—</div></div>
+        <div><div style="font-size:10px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.5px">Costo estándar</div><div style="font-size:13px;color:var(--g700);margin-top:3px" id="kardexCosto">—</div></div>
+        <div><div style="font-size:10px;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:.5px">Método valorización</div><div style="font-size:13px;color:var(--g700);margin-top:3px">Promedio Ponderado</div></div>
+      </div>
+    </div>
+
+    <!-- Tabla Kardex -->
+    <div id="kardexTableWrap" style="background:#fff;border-radius:var(--rl);box-shadow:var(--sh);overflow:hidden;display:none">
+      <div style="overflow-x:auto">
+        <table id="kardexTable" style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px">
+          <thead>
+            <tr style="background:var(--g900);color:#fff">
+              <th rowspan="2" style="padding:10px 12px;text-align:left;border-right:1px solid rgba(255,255,255,.15);min-width:90px">FECHA</th>
+              <th rowspan="2" style="padding:10px 12px;text-align:left;border-right:1px solid rgba(255,255,255,.15);min-width:120px">N° DOCUMENTO</th>
+              <th rowspan="2" style="padding:10px 12px;text-align:left;border-right:1px solid rgba(255,255,255,.15)">TIPO</th>
+              <th rowspan="2" style="padding:10px 12px;text-align:left;border-right:1px solid rgba(255,255,255,.15);min-width:160px">DESCRIPCIÓN / ORIGEN</th>
+              <th colspan="3" style="padding:10px 12px;text-align:center;border-right:1px solid rgba(255,255,255,.15);background:#1565C0">ENTRADAS</th>
+              <th colspan="3" style="padding:10px 12px;text-align:center;border-right:1px solid rgba(255,255,255,.15);background:#B71C1C">SALIDAS</th>
+              <th colspan="3" style="padding:10px 12px;text-align:center;background:#1B5E20">SALDO</th>
+            </tr>
+            <tr style="background:var(--g800);color:#fff">
+              <th style="padding:8px 10px;text-align:right;background:#1565C0">Cant.</th>
+              <th style="padding:8px 10px;text-align:right;background:#1565C0">Costo Unit.</th>
+              <th style="padding:8px 10px;text-align:right;border-right:1px solid rgba(255,255,255,.15);background:#1565C0">Total</th>
+              <th style="padding:8px 10px;text-align:right;background:#B71C1C">Cant.</th>
+              <th style="padding:8px 10px;text-align:right;background:#B71C1C">Costo Unit.</th>
+              <th style="padding:8px 10px;text-align:right;border-right:1px solid rgba(255,255,255,.15);background:#B71C1C">Total</th>
+              <th style="padding:8px 10px;text-align:right;background:#1B5E20">Cant.</th>
+              <th style="padding:8px 10px;text-align:right;background:#1B5E20">Costo Unit.</th>
+              <th style="padding:8px 10px;text-align:right;background:#1B5E20">Total</th>
+            </tr>
+          </thead>
+          <tbody id="kardexTbody">
+            <tr><td colspan="13" style="text-align:center;padding:40px;color:var(--g400)">Selecciona un producto y genera el Kardex</td></tr>
+          </tbody>
+          <tfoot id="kardexTfoot" style="display:none">
+            <tr style="background:var(--g100);font-weight:700;border-top:2px solid var(--g300)">
+              <td colspan="4" style="padding:10px 12px;font-size:12px">TOTALES DEL PERÍODO</td>
+              <td style="padding:10px 12px;text-align:right;color:#1565C0" id="totEntCant">0</td>
+              <td style="padding:10px 12px;text-align:right;color:#1565C0">—</td>
+              <td style="padding:10px 12px;text-align:right;color:#1565C0" id="totEntTotal">S/ 0.00</td>
+              <td style="padding:10px 12px;text-align:right;color:#B71C1C" id="totSalCant">0</td>
+              <td style="padding:10px 12px;text-align:right;color:#B71C1C">—</td>
+              <td style="padding:10px 12px;text-align:right;color:#B71C1C" id="totSalTotal">S/ 0.00</td>
+              <td style="padding:10px 12px;text-align:right;color:#1B5E20;font-size:14px;font-weight:800" id="totSaldoCant">0</td>
+              <td style="padding:10px 12px;text-align:right;color:#1B5E20">—</td>
+              <td style="padding:10px 12px;text-align:right;color:#1B5E20;font-size:14px;font-weight:800" id="totSaldoTotal">S/ 0.00</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div id="kardexEmpty" style="text-align:center;padding:60px 20px;color:var(--g400);background:#fff;border-radius:var(--rl);box-shadow:var(--sh);display:none">
+      <div style="font-size:48px;margin-bottom:12px">📭</div>
+      <p style="font-size:15px;font-weight:600">Sin movimientos en el período seleccionado</p>
+    </div>
+  </div>
+
 </div>
 
 <!-- MODAL PRODUCTO -->
@@ -600,13 +707,14 @@ function showPage(page,el){
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   if(el)el.classList.add('active');
-  const titles={dashboard:'Dashboard',pedidos:'Pedidos',clientes:'Clientes',productos:'Productos',inventario:'Inventario',reportes:'Reportes'};
+  const titles={dashboard:'Dashboard',pedidos:'Pedidos',clientes:'Clientes',productos:'Productos',inventario:'Inventario',reportes:'Reportes',kardex:'Kardex de Inventario'};
   document.getElementById('page-title').textContent=titles[page]||page;
   if(page==='pedidos')cargarPedidos();
   else if(page==='clientes')cargarClientes();
   else if(page==='productos')cargarProductos();
   else if(page==='inventario')cargarInventario();
   else if(page==='reportes')cargarReportes();
+  else if(page==='kardex')iniciarKardex();
 }
 
 // ── ODOO RPC — formato correcto para el proxy ──
@@ -961,6 +1069,247 @@ function showToast(msg,type=''){
   const t=document.getElementById('toast');
   t.textContent=msg;t.className='toast show '+(type||'');
   setTimeout(()=>t.className='toast',3000);
+}
+
+// ═══════════════════════════════════════════════════════
+// KARDEX
+// ═══════════════════════════════════════════════════════
+let kardexData=null; // datos del último kardex generado
+
+async function iniciarKardex(){
+  // Poblar selector de productos
+  if(!allProds.length)await cargarProductos();
+  const sel=document.getElementById('kardexProducto');
+  sel.innerHTML='<option value="">-- Selecciona un producto --</option>'+
+    allProds.filter(p=>p.type!=='service').map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  // Fechas por defecto: inicio del año hasta hoy
+  const hoy=new Date();
+  const ini=new Date(hoy.getFullYear(),0,1);
+  document.getElementById('kardexFechaDesde').value=ini.toISOString().split('T')[0];
+  document.getElementById('kardexFechaHasta').value=hoy.toISOString().split('T')[0];
+}
+
+async function generarKardex(){
+  const prodId=document.getElementById('kardexProducto').value;
+  if(!prodId){showToast('Selecciona un producto','error');return;}
+  const dateFrom=document.getElementById('kardexFechaDesde').value;
+  const dateTo=document.getElementById('kardexFechaHasta').value;
+
+  const btn=document.querySelector('[onclick="generarKardex()"]');
+  btn.textContent='Cargando...';btn.disabled=true;
+
+  try{
+    const r=await fetch(PROXY+'/api/odoo/admin/kardex',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:ODOO.username,password:ODOO.password,
+        product_tmpl_id:prodId,date_from:dateFrom,date_to:dateTo})
+    });
+    const d=await r.json();
+    if(!d.success)throw new Error(d.error||'Error al cargar kardex');
+    kardexData=d;
+    renderKardex(d);
+  }catch(e){
+    showToast('Error: '+e.message,'error');
+    console.error(e);
+  }finally{
+    btn.textContent='Generar';btn.disabled=false;
+  }
+}
+
+function renderKardex(d){
+  const prod=d.producto;
+  const movs=d.movimientos||[];
+  const stockAct=(d.stock_actual||[]).reduce((s,q)=>s+(q.quantity||0),0);
+
+  // Encabezado
+  document.getElementById('kardexNombreProd').textContent=prod?.name||'—';
+  document.getElementById('kardexCodigo').textContent=prod?.default_code||'S/C';
+  document.getElementById('kardexCategoria').textContent=Array.isArray(prod?.categ_id)?prod.categ_id[1]:'—';
+  document.getElementById('kardexUOM').textContent=Array.isArray(prod?.uom_id)?prod.uom_id[1]:'und';
+  document.getElementById('kardexStockActual').textContent=stockAct.toFixed(0)+' und';
+  document.getElementById('kardexPrecioVenta').textContent=prod?`S/ ${Number(prod.list_price).toFixed(2)}`:'—';
+  document.getElementById('kardexCosto').textContent=prod?`S/ ${Number(prod.standard_price).toFixed(2)}`:'—';
+  document.getElementById('kardexHeader').style.display='block';
+
+  // Separar internos (almacén propio) de externos
+  const locInternas=['internal'];
+
+  // Calcular saldo acumulado
+  let saldoCant=0, costoAcum=0;
+  const filas=[];
+
+  // Saldo inicial (antes del período)
+  filas.push({tipo:'SALDO INICIAL',fecha:'',doc:'',desc:'Saldo al inicio del período',
+    entCant:0,entCosto:0,entTotal:0,salCant:0,salCosto:0,salTotal:0,
+    saldoCant:0,saldoCosto:0,saldoTotal:0,isInicial:true});
+
+  let totEntCant=0,totEntTotal=0,totSalCant=0,totSalTotal=0;
+
+  for(const m of movs){
+    const locOrigenUso=m.location_id?.[2]||m.location_id?.[1]||'';
+    const locDestinoUso=m.location_dest_id?.[2]||m.location_dest_id?.[1]||'';
+
+    const esEntrada=
+      (typeof m.location_dest_id==='object'&&!Array.isArray(m.location_dest_id)&&m.location_dest_id?.usage==='internal')||
+      (Array.isArray(m.location_dest_id)&&m.location_dest_id[1]?.toLowerCase().includes('wh'))&&
+      !(Array.isArray(m.location_id)&&m.location_id[1]?.toLowerCase().includes('wh'));
+
+    const cant=Number(m.product_uom_qty||0);
+    const costo=Number(m.price_unit||0)||Number(prod?.standard_price||0);
+
+    // Determinar si es entrada o salida según los nombres de ubicación
+    const destNm=(Array.isArray(m.location_dest_id)?m.location_dest_id[1]:'').toLowerCase();
+    const origNm=(Array.isArray(m.location_id)?m.location_id[1]:'').toLowerCase();
+
+    const esEnt=destNm.includes('stock')||destNm.includes('wh/')||destNm.includes('almacén')||destNm.includes('input');
+    const esSal=origNm.includes('stock')||origNm.includes('wh/')||origNm.includes('almacén');
+
+    const fecha=m.date?(new Date(m.date.replace(' ','T')+'Z')).toLocaleDateString('es-PE',{timeZone:'America/Lima'}):'—';
+    const doc=m.reference||m.name||'—';
+    const desc=`${m.origin||''} | ${Array.isArray(m.location_id)?m.location_id[1]:''} → ${Array.isArray(m.location_dest_id)?m.location_dest_id[1]:''}`;
+
+    let fila={fecha,doc,desc,entCant:0,entCosto:0,entTotal:0,salCant:0,salCosto:0,salTotal:0};
+
+    if(esEnt&&!esSal){
+      // ENTRADA
+      fila.tipo='ENTRADA';
+      fila.entCant=cant;fila.entCosto=costo;fila.entTotal=cant*costo;
+      // Costo promedio ponderado
+      const newTotal=(saldoCant*costoAcum)+(cant*costo);
+      saldoCant+=cant;
+      costoAcum=saldoCant>0?newTotal/saldoCant:costo;
+      totEntCant+=cant;totEntTotal+=fila.entTotal;
+    }else{
+      // SALIDA
+      fila.tipo='SALIDA';
+      fila.salCant=cant;fila.salCosto=costoAcum||costo;fila.salTotal=cant*(costoAcum||costo);
+      saldoCant=Math.max(0,saldoCant-cant);
+      totSalCant+=cant;totSalTotal+=fila.salTotal;
+    }
+
+    fila.saldoCant=saldoCant;
+    fila.saldoCosto=costoAcum;
+    fila.saldoTotal=saldoCant*costoAcum;
+    filas.push(fila);
+  }
+
+  // Actualizar saldo inicial con el saldo real calculado inverso (aproximación)
+  if(filas.length>0){
+    filas[0].saldoCant=saldoCant-totEntCant+totSalCant; // saldo inicial aproximado
+    filas[0].saldoCosto=prod?.standard_price||0;
+    filas[0].saldoTotal=filas[0].saldoCant*(prod?.standard_price||0);
+  }
+
+  if(movs.length===0){
+    document.getElementById('kardexTableWrap').style.display='none';
+    document.getElementById('kardexEmpty').style.display='block';
+    document.getElementById('btnDescargarKardex').style.display='none';
+    return;
+  }
+
+  document.getElementById('kardexEmpty').style.display='none';
+  document.getElementById('kardexTableWrap').style.display='block';
+  document.getElementById('btnDescargarKardex').style.display='inline-flex';
+
+  const rowColor={'ENTRADA':'#E3F2FD','SALIDA':'#FFEBEE','SALDO INICIAL':'#F3E5F5'};
+  const tbody=document.getElementById('kardexTbody');
+  tbody.innerHTML=filas.map(f=>`
+    <tr style="background:${rowColor[f.tipo]||'#fff'};border-bottom:1px solid #F0F0F0">
+      <td style="padding:8px 12px;font-size:11px;color:#555">${f.fecha}</td>
+      <td style="padding:8px 12px;font-size:11px;font-weight:600">${f.doc}</td>
+      <td style="padding:8px 12px">
+        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:${f.tipo==='ENTRADA'?'#1565C0':f.tipo==='SALIDA'?'#B71C1C':'#7B1FA2'};color:#fff">${f.tipo}</span>
+      </td>
+      <td style="padding:8px 12px;font-size:11px;color:#555;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${f.desc}">${f.desc}</td>
+      <td style="padding:8px 12px;text-align:right;font-weight:${f.entCant?'700':'400'};color:${f.entCant?'#1565C0':'#bbb'}">${f.entCant?f.entCant.toFixed(2):'—'}</td>
+      <td style="padding:8px 12px;text-align:right;color:${f.entCant?'#1565C0':'#bbb'}">${f.entCant?'S/ '+f.entCosto.toFixed(2):'—'}</td>
+      <td style="padding:8px 12px;text-align:right;font-weight:${f.entTotal?'700':'400'};color:${f.entTotal?'#1565C0':'#bbb'};border-right:2px solid #E0E0E0">${f.entTotal?'S/ '+f.entTotal.toFixed(2):'—'}</td>
+      <td style="padding:8px 12px;text-align:right;font-weight:${f.salCant?'700':'400'};color:${f.salCant?'#B71C1C':'#bbb'}">${f.salCant?f.salCant.toFixed(2):'—'}</td>
+      <td style="padding:8px 12px;text-align:right;color:${f.salCant?'#B71C1C':'#bbb'}">${f.salCant?'S/ '+f.salCosto.toFixed(2):'—'}</td>
+      <td style="padding:8px 12px;text-align:right;font-weight:${f.salTotal?'700':'400'};color:${f.salTotal?'#B71C1C':'#bbb'};border-right:2px solid #E0E0E0">${f.salTotal?'S/ '+f.salTotal.toFixed(2):'—'}</td>
+      <td style="padding:8px 12px;text-align:right;font-weight:700;color:#1B5E20">${f.saldoCant.toFixed(2)}</td>
+      <td style="padding:8px 12px;text-align:right;color:#1B5E20">S/ ${f.saldoCosto.toFixed(2)}</td>
+      <td style="padding:8px 12px;text-align:right;font-weight:800;color:#1B5E20">S/ ${f.saldoTotal.toFixed(2)}</td>
+    </tr>`).join('');
+
+  // Totales
+  document.getElementById('totEntCant').textContent=totEntCant.toFixed(2);
+  document.getElementById('totEntTotal').textContent='S/ '+totEntTotal.toFixed(2);
+  document.getElementById('totSalCant').textContent=totSalCant.toFixed(2);
+  document.getElementById('totSalTotal').textContent='S/ '+totSalTotal.toFixed(2);
+  document.getElementById('totSaldoCant').textContent=saldoCant.toFixed(2);
+  document.getElementById('totSaldoTotal').textContent='S/ '+(saldoCant*costoAcum).toFixed(2);
+  document.getElementById('kardexTfoot').style.display='table-footer-group';
+}
+
+function descargarKardex(){
+  if(!kardexData)return;
+  const prod=kardexData.producto;
+  const movs=kardexData.movimientos||[];
+  const dateFrom=document.getElementById('kardexFechaDesde').value;
+  const dateTo=document.getElementById('kardexFechaHasta').value;
+  const hoy=new Date().toLocaleDateString('es-PE');
+
+  const rows=[
+    ['KARDEX DE INVENTARIO - MÉTODO PROMEDIO PONDERADO'],
+    ['Empresa:','SUMAQ Importadora S.A.C.'],
+    ['RUC:','20XXXXXXXXX'],
+    ['Producto:',prod?.name||'—'],
+    ['Código:',prod?.default_code||'S/C'],
+    ['Categoría:',Array.isArray(prod?.categ_id)?prod.categ_id[1]:'—'],
+    ['Unidad:',Array.isArray(prod?.uom_id)?prod.uom_id[1]:'und'],
+    ['Precio de venta:','S/ '+(prod?.list_price||0).toFixed(2)],
+    ['Costo estándar:','S/ '+(prod?.standard_price||0).toFixed(2)],
+    ['Período:',`${dateFrom} al ${dateTo}`],
+    ['Fecha reporte:',hoy],
+    [],
+    ['FECHA','N° DOCUMENTO','TIPO DE MOVIMIENTO','DESCRIPCIÓN / ORIGEN',
+     'ENT.CANTIDAD','ENT.COSTO UNIT.','ENT.TOTAL',
+     'SAL.CANTIDAD','SAL.COSTO UNIT.','SAL.TOTAL',
+     'SALDO CANTIDAD','SALDO COSTO UNIT.','SALDO TOTAL'],
+  ];
+
+  // Recalcular para CSV
+  let saldoCant=0,costoAcum=Number(prod?.standard_price||0);
+  let totEC=0,totET=0,totSC=0,totST=0;
+
+  for(const m of movs){
+    const cant=Number(m.product_uom_qty||0);
+    const costo=Number(m.price_unit||0)||costoAcum;
+    const fecha=m.date?(new Date(m.date.replace(' ','T')+'Z')).toLocaleDateString('es-PE',{timeZone:'America/Lima'}):'';
+    const doc=m.reference||m.name||'';
+    const destNm=(Array.isArray(m.location_dest_id)?m.location_dest_id[1]:'').toLowerCase();
+    const origNm=(Array.isArray(m.location_id)?m.location_id[1]:'').toLowerCase();
+    const esEnt=destNm.includes('stock')||destNm.includes('wh/')||destNm.includes('almacén')||destNm.includes('input');
+    const desc=`${m.origin||''} (${Array.isArray(m.location_id)?m.location_id[1]:''} → ${Array.isArray(m.location_dest_id)?m.location_dest_id[1]:''})`;
+
+    let row;
+    if(esEnt){
+      const entTotal=cant*costo;
+      const newTotal=(saldoCant*costoAcum)+entTotal;
+      saldoCant+=cant;costoAcum=saldoCant>0?newTotal/saldoCant:costo;
+      totEC+=cant;totET+=entTotal;
+      row=[fecha,doc,'ENTRADA',desc,cant.toFixed(2),costo.toFixed(2),entTotal.toFixed(2),'','','',saldoCant.toFixed(2),costoAcum.toFixed(2),(saldoCant*costoAcum).toFixed(2)];
+    }else{
+      const salTotal=cant*costoAcum;
+      saldoCant=Math.max(0,saldoCant-cant);
+      totSC+=cant;totST+=salTotal;
+      row=[fecha,doc,'SALIDA',desc,'','','',(cant).toFixed(2),costoAcum.toFixed(2),salTotal.toFixed(2),saldoCant.toFixed(2),costoAcum.toFixed(2),(saldoCant*costoAcum).toFixed(2)];
+    }
+    rows.push(row);
+  }
+
+  rows.push([]);
+  rows.push(['TOTALES DEL PERÍODO','','','',totEC.toFixed(2),'',totET.toFixed(2),totSC.toFixed(2),'',totST.toFixed(2),saldoCant.toFixed(2),costoAcum.toFixed(2),(saldoCant*costoAcum).toFixed(2)]);
+
+  const csv=rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const nomProd=(prod?.name||'producto').replace(/[^a-zA-Z0-9]/g,'_');
+  a.href=url;a.download=`KARDEX_${nomProd}_${dateFrom}_${dateTo}.csv`;a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ Kardex descargado correctamente','success');
 }
 </script>
 </body>
