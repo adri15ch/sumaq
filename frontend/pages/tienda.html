@@ -693,7 +693,7 @@ footer{background:#212121;color:#aaa;padding:48px 0 0}
   <div class="cart-footer" id="cartFooter" style="display:none">
     <div class="cart-totals">
       <div class="cart-row"><span>Subtotal</span><span id="cartSub">S/ 0.00</span></div>
-      <div class="cart-row"><span>IGV (4.5%)</span><span id="cartIgv">S/ 0.00</span></div>
+      <div class="cart-row"><span>IGV (18%)</span><span id="cartIgv">S/ 0.00</span></div>
       <div class="cart-row free"><span>Envío</span><span id="cartEnvio">Gratis</span></div>
       <div class="cart-row total"><span>Total</span><span id="cartTotal">S/ 0.00</span></div>
     </div>
@@ -795,7 +795,7 @@ footer{background:#212121;color:#aaa;padding:48px 0 0}
 const PROXY='https://odoo-proxy-am0c.onrender.com';
 const SESSION_KEY='ix_session';
 const CART_KEY='ix_cart';
-const IGV=0.045;
+const IGV=0.18;
 
 let allP=[],filtP=[];
 // Cargar carrito y deduplicar IDs repetidos (bug de sesiones anteriores)
@@ -1095,7 +1095,7 @@ async function loadProds(){
 function starHTML(r){let h='';for(let i=1;i<=5;i++)h+=`<svg class="star ${i<=Math.floor(r)?'sf':'se'}" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;return h;}
 
 function buildCard(p,idx){
-  const tot=(p.pr*(1+IGV)).toFixed(2);          // precio con IGV 4.5%
+  const tot=(p.pr*(1+IGV)).toFixed(2);          // precio con IGV 18%
   const orig=(p.pr*1.18).toFixed(2);             // precio normal con IGV 18% Perú
   const agotado=p.st===0;
   const low=p.st>0&&p.st<=5;
@@ -1110,7 +1110,7 @@ function buildCard(p,idx){
     <!-- ÁREA CLICKABLE → abre modal (imagen + cuerpo) -->
     <div class="pc-img" onclick="abrirModal(${idx})" style="cursor:pointer">
       <img src="${p.img}" alt="${esc(p.nm)}" loading="lazy"/>
-      <span class="pc-disc">-11%</span>
+      
       <button class="pc-heart" onclick="event.stopPropagation();this.classList.toggle('fav')" title="Favorito">
         <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
       </button>
@@ -1125,10 +1125,10 @@ function buildCard(p,idx){
       <div class="pc-name">${esc(p.nm)}</div>
       <div class="pc-stars"><div class="stars">${starHTML(p.rat)}</div><span class="pc-rev">(${p.rev})</span></div>
       <div class="pc-price">
-        <div class="pc-price-orig">Antes S/ ${orig}</div>
+        
         <div class="pc-price-tag">PRECIO INTERNET</div>
         <div class="pc-price-main">S/ ${tot}</div>
-        <div class="pc-price-igv">Precio incluye IGV (4.5%)</div>
+        <div class="pc-price-igv">Precio incluye IGV (18%)</div>
       </div>
     </div>
     <!-- BOTÓN AGREGAR — separado del área clickable, no interfiere con el modal -->
@@ -1174,7 +1174,7 @@ function abrirModal(idx){
   const p=filtP[idx];if(!p)return;
   curModalIdx=idx;mQty=1;
   const enCarrito=cart.find(c=>c.id===p.id); // ← variable necesaria en el template
-  const tot=(p.pr*(1+IGV)).toFixed(2);          // precio con IGV 4.5%
+  const tot=(p.pr*(1+IGV)).toFixed(2);          // precio con IGV 18%
   const orig=(p.pr*1.18).toFixed(2);             // precio normal con IGV 18% Perú
   const agotado=p.st===0;
   const low=p.st>0&&p.st<=5;
@@ -1183,7 +1183,7 @@ function abrirModal(idx){
   const imgPanel=`<img class="modal-main-img" src="${p.img}" alt="${esc(p.nm)}"/>`;
   document.getElementById('modalInner').innerHTML=`
     <div class="modal-img-panel">
-      <span class="modal-disc-badge">-11% OFF</span>
+      
       ${imgPanel}
       <div class="modal-thumbs">
         <div class="modal-thumb active"><img src="${p.img}" alt=""/></div>
@@ -1198,10 +1198,10 @@ function abrirModal(idx){
         <span class="rev-count">${p.rev} reseñas verificadas</span>
       </div>
       <div class="modal-price-box">
-        <div class="modal-price-orig">Precio normal (IGV 18%): S/ ${orig}</div>
-        <div class="modal-price-tag">🎉 PRECIO INTERNET — IGV 4.5%</div>
+        
+        <div class="modal-price-tag">🎉 PRECIO INTERNET — IGV 18%</div>
         <div class="modal-price-main">S/ ${tot}</div>
-        <div class="modal-price-igv">Incluye IGV 4.5% · Precio base sin IGV: S/ ${p.pr.toFixed(2)}</div>
+        <div class="modal-price-igv">Incluye IGV 18% · Precio base sin IGV: S/ ${p.pr.toFixed(2)}</div>
         <div class="modal-price-mayorista">Comprando 10+ unidades: <strong>S/ ${(p.pr*0.9*(1+IGV)).toFixed(2)}</strong> (10% dcto)</div>
       </div>
       <div class="modal-stock">
