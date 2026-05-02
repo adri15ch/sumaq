@@ -423,6 +423,9 @@ const PROXY = 'https://odoo-proxy-am0c.onrender.com';
 const SESSION_KEY = 'ix_session';
 const CART_KEY = 'ix_cart';
 const IGV_RATE = 0.18;
+const MAYORISTA_MIN = 10;
+const MAYORISTA_DESC = 0.10;
+function precioBaseItem(pr, qty){ return qty >= MAYORISTA_MIN ? pr * (1 - MAYORISTA_DESC) : pr; }
 const ENVIO_EFECTIVO = 10;
 const FREE_SHIP_MIN = 100;
 const MAX_FIELD_LEN = { nombres:60, apellidos:60, telefono:20, direccion:200, ruc:11 };
@@ -547,8 +550,8 @@ function selectPago(tipo, el) {
 // RENDERIZAR RESUMEN
 // ══════════════════════════════════════════════════════
 function calcTotales() {
-  // subtotalBase = suma de precios SIN IGV (lo que almacena el carrito)
-  const subtotalBase = cart.reduce((s, c) => s + (c.pr || c.precio || 0) * c.qty, 0);
+  // subtotalBase con descuento mayorista si qty >= 10
+  const subtotalBase = cart.reduce((s, c) => s + precioBaseItem(c.pr || c.precio || 0, c.qty) * c.qty, 0);
   const igv = subtotalBase * IGV_RATE;
   // subtotal que ve el cliente = con IGV (igual que en la tienda)
   const subtotalConIgv = subtotalBase + igv;
@@ -584,7 +587,10 @@ function renderResumen() {
         <div class="s-item-name">${sanitize(c.nm || c.nombre)}</div>
         <div class="s-item-qty">× ${c.qty}</div>
       </div>
-      <div class="s-item-price">S/ ${(precio * (1 + IGV_RATE) * c.qty).toFixed(2)}</div>
+      <div class="s-item-price">
+        S/ ${(precioBaseItem(precio,c.qty) * (1 + IGV_RATE) * c.qty).toFixed(2)}
+        ${c.qty >= MAYORISTA_MIN ? `<div style="font-size:10px;color:#2E7D32;font-weight:700">-10% mayorista ✓</div>` : ''}
+      </div>
     </div>`;
   }).join('');
   calcTotales();
@@ -661,8 +667,11 @@ async function realizarPedido() {
     const lineas = cart.map(c => ({
       product_id: c.oId || c.id,
       qty: c.qty,
-      price: c.pr || c.precio || 0,
-      name: c.nm || c.nombre || '',
+      // Enviar precio con descuento mayorista si aplica (lo que realmente paga el cliente)
+      price: precioBaseItem(c.pr || c.precio || 0, c.qty),
+      name: c.qty >= MAYORISTA_MIN
+        ? `${c.nm || c.nombre || ''} (precio mayorista -10%)`
+        : (c.nm || c.nombre || ''),
     }));
 
     const ordenRes = await fetch(`${PROXY}/api/odoo/orden`, {

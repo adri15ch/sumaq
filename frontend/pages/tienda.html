@@ -796,6 +796,13 @@ const PROXY='https://odoo-proxy-am0c.onrender.com';
 const SESSION_KEY='ix_session';
 const CART_KEY='ix_cart';
 const IGV=0.18;
+const MAYORISTA_MIN=10;   // unidades mínimas para precio mayorista
+const MAYORISTA_DESC=0.10; // 10% descuento mayorista
+
+// Precio base con descuento mayorista si aplica
+function precioBase(pr,qty){return qty>=MAYORISTA_MIN?pr*(1-MAYORISTA_DESC):pr;}
+// Precio final con IGV
+function precioFinal(pr,qty){return precioBase(pr,qty)*(1+IGV);}
 
 let allP=[],filtP=[];
 // Cargar carrito y deduplicar IDs repetidos (bug de sesiones anteriores)
@@ -880,7 +887,10 @@ function renderCart(){
       <div class="ci-img">${imgHtml}</div>
       <div class="ci-info">
         <div class="ci-name">${esc(c.nm)}</div>
-        <div class="ci-price">S/ ${(c.pr*(1+IGV)).toFixed(2)}</div>
+        <div class="ci-price">
+          S/ ${precioFinal(c.pr,c.qty).toFixed(2)}
+          ${c.qty>=MAYORISTA_MIN?`<span style="background:#E8F5E9;color:#2E7D32;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:4px">-10% mayorista</span>`:''}
+        </div>
         <div class="ci-qty-ctrl">
           <button class="ci-qty-btn" onclick="changeQtyCart(${i},-1)">−</button>
           <span class="ci-qty-num">${c.qty}</span>
@@ -890,14 +900,15 @@ function renderCart(){
       <button class="ci-del" onclick="removeCart(${i})">✕</button>
     </div>`;
   }).join('');
-  const sub=cart.reduce((s,c)=>s+c.pr*c.qty,0);
+  const sub=cart.reduce((s,c)=>s+precioBase(c.pr,c.qty)*c.qty,0);
   const igv=sub*IGV;
-  const envio=sub>=100?'Gratis':'S/ 10.00';
-  document.getElementById('cartSub').textContent='S/ '+sub.toFixed(2);
-  document.getElementById('cartIgv').textContent='S/ '+igv.toFixed(2);
+  const envio=sub*(1+IGV)>=100?'Gratis':'S/ 10.00';
+  const subConIGV=sub*(1+IGV);
+  document.getElementById('cartSub').textContent='S/ '+subConIGV.toFixed(2);
+  document.getElementById('cartIgv').textContent='S/ '+igv.toFixed(2)+' (incl.)';
   document.getElementById('cartEnvio').textContent=envio;
-  const envioAmt=sub>=100?0:10;
-  document.getElementById('cartTotal').textContent='S/ '+(sub+igv+envioAmt).toFixed(2);
+  const envioAmt=subConIGV>=100?0:10;
+  document.getElementById('cartTotal').textContent='S/ '+(subConIGV+envioAmt).toFixed(2);
   footer.style.display='block';
   const ln=document.getElementById('loginNote');
   if(ln)ln.style.display=isLoggedIn()?'none':'block';
@@ -1198,11 +1209,15 @@ function abrirModal(idx){
         <span class="rev-count">${p.rev} reseñas verificadas</span>
       </div>
       <div class="modal-price-box">
-        
-        <div class="modal-price-tag">🎉 PRECIO INTERNET — IGV 18%</div>
-        <div class="modal-price-main">S/ ${tot}</div>
-        <div class="modal-price-igv">Incluye IGV 18% · Precio base sin IGV: S/ ${p.pr.toFixed(2)}</div>
-        <div class="modal-price-mayorista">Comprando 10+ unidades: <strong>S/ ${(p.pr*0.9*(1+IGV)).toFixed(2)}</strong> (10% dcto)</div>
+        <div class="modal-price-tag">PRECIO UNITARIO — IGV 18% incluido</div>
+        <div class="modal-price-main" id="modalPrecioFinal">S/ ${tot}</div>
+        <div class="modal-price-igv">Precio base sin IGV: S/ ${p.pr.toFixed(2)}</div>
+        <div id="modalMayorista" style="display:none;margin-top:8px;background:#E8F5E9;border-radius:6px;padding:8px 12px;font-size:13px;color:#2E7D32;font-weight:700">
+          🏷️ Precio mayorista aplicado (-10%) — comprando 10+ unidades
+        </div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:12px;color:var(--t2)">
+          📦 Comprando <strong>10+ unidades</strong>: <strong style="color:#2E7D32">S/ ${(p.pr*0.9*(1+IGV)).toFixed(2)}</strong> c/u (10% dcto automático)
+        </div>
       </div>
       <div class="modal-stock">
         <div class="stock-dot ${sdCls}"></div>
@@ -1223,7 +1238,19 @@ function abrirModal(idx){
   document.getElementById('modalOv').classList.add('open');
 }
 function cerrarModal(){document.getElementById('modalOv').classList.remove('open');}
-function chgQty(d){mQty=Math.max(1,Math.min(99,mQty+d));document.getElementById('modalQtyNum').textContent=mQty;}
+function chgQty(d){
+  mQty=Math.max(1,Math.min(99,mQty+d));
+  document.getElementById('modalQtyNum').textContent=mQty;
+  // Actualizar precio en modal si cambia a/desde mayorista
+  const p=filtP[curModalIdx];
+  if(p){
+    const tot=precioFinal(p.pr,mQty).toFixed(2);
+    const el=document.getElementById('modalPrecioFinal');
+    if(el)el.textContent=`S/ ${tot}`;
+    const tag=document.getElementById('modalMayorista');
+    if(tag)tag.style.display=mQty>=MAYORISTA_MIN?'block':'none';
+  }
+}
 // Agregar desde modal — nunca duplica
 function addDesdeModal(){
   const p=filtP[curModalIdx];if(!p)return;
