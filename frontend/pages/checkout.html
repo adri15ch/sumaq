@@ -364,6 +364,9 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
         </div>
         <div class="summary-items" id="summaryItems"></div>
         <div class="summary-totals">
+          <div class="s-row" id="sAhorroRow" style="display:none;color:#2E7D32;font-weight:700;background:#E8F5E9;padding:6px 10px;border-radius:6px;margin-bottom:6px">
+            <span>🏷️ Descuento mayorista (-10%)</span><span id="sAhorro">-S/ 0.00</span>
+          </div>
           <div class="s-row"><span>Subtotal (IGV incluido)</span><span id="sSubtotal">S/ 0.00</span></div>
           <div class="s-row" style="font-size:11px;color:var(--t3)"><span>↳ IGV 18% incluido</span><span id="sIgv">S/ 0.00</span></div>
           <div class="s-row free" id="sEnvioRow"><span>Envío</span><span id="sEnvio">Gratis</span></div>
@@ -558,8 +561,19 @@ function calcTotales() {
   const costoEnvio = pagoSeleccionado === 'efectivo' ? ENVIO_EFECTIVO : 0;
   const total = subtotalConIgv + costoEnvio;
 
+  // Calcular ahorro total por descuentos mayorista
+  const subtotalSinDesc = cart.reduce((s,c)=>{
+    const pr=c.pr||c.precio||0;
+    return s + pr*(1+IGV_RATE)*c.qty;
+  },0);
+  const ahorroTotal = subtotalSinDesc - subtotalConIgv;
   document.getElementById('sSubtotal').textContent = `S/ ${subtotalConIgv.toFixed(2)}`;
   document.getElementById('sIgv').textContent = `S/ ${igv.toFixed(2)} (incl.)`;
+  // Mostrar ahorro si aplica
+  const ahorroEl = document.getElementById('sAhorroRow');
+  if(ahorroEl){ahorroEl.style.display = ahorroTotal > 0.01 ? 'flex' : 'none';}
+  const ahorroVal = document.getElementById('sAhorro');
+  if(ahorroVal){ahorroVal.textContent = `-S/ ${ahorroTotal.toFixed(2)}`; }
   const envioEl = document.getElementById('sEnvio');
   const envioRow = document.getElementById('sEnvioRow');
   if (costoEnvio > 0) {
@@ -578,18 +592,32 @@ function renderResumen() {
   document.getElementById('summaryCount').textContent = `${n} producto${n !== 1 ? 's' : ''}`;
   document.getElementById('summaryItems').innerHTML = cart.map(c => {
     const precio = c.pr || c.precio || 0;
+    const esMayorista = c.qty >= MAYORISTA_MIN;
+    const precioUnitNormal = precio * (1 + IGV_RATE);          // precio normal con IGV
+    const precioUnitDesc   = precio * 0.9 * (1 + IGV_RATE);    // precio con -10%
+    const totalNormal = precioUnitNormal * c.qty;
+    const totalDesc   = precioUnitDesc * c.qty;
+    const ahorro      = totalNormal - totalDesc;
     const imgHtml = c.img
       ? `<img class="s-item-img" src="${sanitize(c.img)}" alt="${sanitize(c.nm || c.nombre)}"/>`
       : `<div class="s-item-img-ph">📦</div>`;
-    return `<div class="s-item">
+    return `<div class="s-item" style="flex-wrap:wrap;gap:6px">
       ${imgHtml}
       <div style="flex:1;min-width:0">
         <div class="s-item-name">${sanitize(c.nm || c.nombre)}</div>
-        <div class="s-item-qty">× ${c.qty}</div>
+        <div class="s-item-qty" style="color:#888">
+          ${c.qty} und × S/ ${(esMayorista?precioUnitDesc:precioUnitNormal).toFixed(2)} c/u
+        </div>
+        ${esMayorista ? `
+          <div style="font-size:11px;margin-top:3px">
+            <span style="text-decoration:line-through;color:#aaa">Normal: S/ ${totalNormal.toFixed(2)}</span>
+            <span style="background:#E8F5E9;color:#2E7D32;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:6px;font-size:10px">-10% mayorista</span>
+          </div>
+          <div style="font-size:11px;color:#2E7D32;font-weight:600;margin-top:1px">Ahorras S/ ${ahorro.toFixed(2)} en este pedido</div>
+        ` : ''}
       </div>
-      <div class="s-item-price">
-        S/ ${(precioBaseItem(precio,c.qty) * (1 + IGV_RATE) * c.qty).toFixed(2)}
-        ${c.qty >= MAYORISTA_MIN ? `<div style="font-size:10px;color:#2E7D32;font-weight:700">-10% mayorista ✓</div>` : ''}
+      <div class="s-item-price" style="font-weight:800;color:${esMayorista?'#2E7D32':'var(--t1)'}">
+        S/ ${(esMayorista?totalDesc:totalNormal).toFixed(2)}
       </div>
     </div>`;
   }).join('');
