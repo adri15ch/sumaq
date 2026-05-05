@@ -488,7 +488,7 @@
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn-primary" onclick="generarKardex()" style="padding:10px 20px;font-size:13px">🔍 Generar Kardex</button>
-        <button class="btn-secondary" id="btnDescargarKardex" onclick="descargarKardex()" style="display:none;padding:10px 20px;font-size:13px">⬇️ Descargar CSV</button>
+        <button class="btn-secondary" id="btnDescargarKardex" onclick="descargarKardex()" style="display:none;padding:10px 20px;font-size:13px">⬇️ Descargar Excel</button>
       </div>
     </div>
 
@@ -1077,11 +1077,22 @@ function showToast(msg,type=''){
 let kardexData=null; // datos del último kardex generado
 
 async function iniciarKardex(){
-  // Poblar selector de productos
-  if(!allProds.length)await cargarProductos();
   const sel=document.getElementById('kardexProducto');
-  sel.innerHTML='<option value="">-- Selecciona un producto --</option>'+
-    allProds.filter(p=>p.type!=='service').map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  sel.innerHTML='<option value="">Cargando productos...</option>';
+  try{
+    // Cargar TODOS los productos (incluyendo servicios y consumibles) para el kardex
+    const prods=await odooRPC('product.template','search_read',[[['active','=',true]]],
+      {fields:['id','name','type','default_code'],limit:500,order:'name asc'});
+    const lista=prods||[];
+    sel.innerHTML='<option value="">-- Selecciona un producto --</option>'+
+      lista.map(p=>{
+        const tipo=p.type==='service'?'[Servicio] ':p.type==='consu'?'[Consumible] ':'';
+        return`<option value="${p.id}">${tipo}${p.name}${p.default_code?' ('+p.default_code+')':''}</option>`;
+      }).join('');
+  }catch(e){
+    sel.innerHTML='<option value="">Error al cargar productos</option>';
+    showToast('Error cargando productos: '+e.message,'error');
+  }
   // Fechas por defecto: inicio del año hasta hoy
   const hoy=new Date();
   const ini=new Date(hoy.getFullYear(),0,1);
@@ -1248,68 +1259,186 @@ function descargarKardex(){
   const movs=kardexData.movimientos||[];
   const dateFrom=document.getElementById('kardexFechaDesde').value;
   const dateTo=document.getElementById('kardexFechaHasta').value;
-  const hoy=new Date().toLocaleDateString('es-PE');
+  const hoy=new Date().toLocaleDateString('es-PE',{timeZone:'America/Lima'});
+  const nomProd=(prod?.name||'producto').replace(/[^a-zA-Z0-9]/g,'_');
 
-  const rows=[
-    ['KARDEX DE INVENTARIO - MÉTODO PROMEDIO PONDERADO'],
-    ['Empresa:','SUMAQ Importadora S.A.C.'],
-    ['RUC:','20XXXXXXXXX'],
-    ['Producto:',prod?.name||'—'],
-    ['Código:',prod?.default_code||'S/C'],
-    ['Categoría:',Array.isArray(prod?.categ_id)?prod.categ_id[1]:'—'],
-    ['Unidad:',Array.isArray(prod?.uom_id)?prod.uom_id[1]:'und'],
-    ['Precio de venta:','S/ '+(prod?.list_price||0).toFixed(2)],
-    ['Costo estándar:','S/ '+(prod?.standard_price||0).toFixed(2)],
-    ['Período:',`${dateFrom} al ${dateTo}`],
-    ['Fecha reporte:',hoy],
-    [],
-    ['FECHA','N° DOCUMENTO','TIPO DE MOVIMIENTO','DESCRIPCIÓN / ORIGEN',
-     'ENT.CANTIDAD','ENT.COSTO UNIT.','ENT.TOTAL',
-     'SAL.CANTIDAD','SAL.COSTO UNIT.','SAL.TOTAL',
-     'SALDO CANTIDAD','SALDO COSTO UNIT.','SALDO TOTAL'],
-  ];
-
-  // Recalcular para CSV
+  // ── Recalcular filas con promedio ponderado ────────────────────────────────
   let saldoCant=0,costoAcum=Number(prod?.standard_price||0);
   let totEC=0,totET=0,totSC=0,totST=0;
+  const filas=[];
 
   for(const m of movs){
     const cant=Number(m.product_uom_qty||0);
-    const costo=costoAcum||Number(prod?.standard_price||0);
     const fecha=m.date?(new Date(m.date.replace(' ','T')+'Z')).toLocaleDateString('es-PE',{timeZone:'America/Lima'}):'';
     const doc=Array.isArray(m.picking_id)?m.picking_id[1]:(m.reference||m.origin||'');
     const destNm=(Array.isArray(m.location_dest_id)?m.location_dest_id[1]:'').toLowerCase();
-    const origNm=(Array.isArray(m.location_id)?m.location_id[1]:'').toLowerCase();
+    const desc=`${m.origin||''} | ${Array.isArray(m.location_id)?m.location_id[1]:''} → ${Array.isArray(m.location_dest_id)?m.location_dest_id[1]:''}`;
     const esEnt=destNm.includes('stock')||destNm.includes('wh/')||destNm.includes('almacén')||destNm.includes('input');
-    const desc=`${m.origin||''} (${Array.isArray(m.location_id)?m.location_id[1]:''} → ${Array.isArray(m.location_dest_id)?m.location_dest_id[1]:''})`;
 
-    let row;
     if(esEnt){
-      const entTotal=cant*costo;
+      const entTotal=cant*costoAcum;
       const newTotal=(saldoCant*costoAcum)+entTotal;
-      saldoCant+=cant;costoAcum=saldoCant>0?newTotal/saldoCant:costo;
-      totEC+=cant;totET+=entTotal;
-      row=[fecha,doc,'ENTRADA',desc,cant.toFixed(2),costo.toFixed(2),entTotal.toFixed(2),'','','',saldoCant.toFixed(2),costoAcum.toFixed(2),(saldoCant*costoAcum).toFixed(2)];
+      saldoCant+=cant; costoAcum=saldoCant>0?newTotal/saldoCant:costoAcum;
+      totEC+=cant; totET+=entTotal;
+      filas.push({tipo:'ENTRADA',fecha,doc,desc,eC:cant,eCu:costoAcum,eT:entTotal,sC:0,sCu:0,sT:0,sdC:saldoCant,sdCu:costoAcum,sdT:saldoCant*costoAcum});
     }else{
       const salTotal=cant*costoAcum;
       saldoCant=Math.max(0,saldoCant-cant);
-      totSC+=cant;totST+=salTotal;
-      row=[fecha,doc,'SALIDA',desc,'','','',(cant).toFixed(2),costoAcum.toFixed(2),salTotal.toFixed(2),saldoCant.toFixed(2),costoAcum.toFixed(2),(saldoCant*costoAcum).toFixed(2)];
+      totSC+=cant; totST+=salTotal;
+      filas.push({tipo:'SALIDA',fecha,doc,desc,eC:0,eCu:0,eT:0,sC:cant,sCu:costoAcum,sT:salTotal,sdC:saldoCant,sdCu:costoAcum,sdT:saldoCant*costoAcum});
     }
-    rows.push(row);
   }
 
-  rows.push([]);
-  rows.push(['TOTALES DEL PERÍODO','','','',totEC.toFixed(2),'',totET.toFixed(2),totSC.toFixed(2),'',totST.toFixed(2),saldoCant.toFixed(2),costoAcum.toFixed(2),(saldoCant*costoAcum).toFixed(2)]);
+  // ── Generar HTML Excel ────────────────────────────────────────────────────
+  const sty={
+    tbl:'border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:10pt',
+    titulo:'background:#1a1a2e;color:#fff;font-size:14pt;font-weight:bold;text-align:center;padding:12px;border:1px solid #000',
+    info_lbl:'background:#e8eaf6;color:#283593;font-weight:bold;padding:6px 8px;border:1px solid #9fa8da;font-size:9pt',
+    info_val:'background:#fff;padding:6px 8px;border:1px solid #9fa8da;font-size:9pt',
+    hdr_main:'padding:8px;border:1px solid #000;text-align:center;font-weight:bold;color:#fff;font-size:9pt;vertical-align:middle',
+    hdr_ent:'background:#0d47a1',
+    hdr_sal:'background:#b71c1c',
+    hdr_sal2:'background:#c62828',
+    hdr_sld:'background:#1b5e20',
+    hdr_base:'background:#212121',
+    cel:'padding:6px 8px;border:1px solid #bbb;text-align:center;font-size:9pt;vertical-align:middle',
+    cel_r:'padding:6px 8px;border:1px solid #bbb;text-align:right;font-size:9pt;vertical-align:middle',
+    cel_l:'padding:6px 8px;border:1px solid #bbb;text-align:left;font-size:9pt;vertical-align:middle;max-width:200px',
+    ent_row:'background:#e3f2fd',
+    sal_row:'background:#ffebee',
+    tot_row:'background:#f5f5f5;font-weight:bold;border-top:2px solid #333',
+  };
 
-  const csv=rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+  const n=v=>Number(v||0).toFixed(2);
+
+  let htmlFilas=filas.map(f=>{
+    const bg=f.tipo==='ENTRADA'?sty.ent_row:sty.sal_row;
+    const tipoBg=f.tipo==='ENTRADA'?'background:#1565C0;color:#fff':'background:#C62828;color:#fff';
+    return`<tr style="${bg}">
+      <td style="${sty.cel}">${f.fecha}</td>
+      <td style="${sty.cel_l}">${f.doc}</td>
+      <td style="${sty.cel};${tipoBg};font-weight:bold">${f.tipo}</td>
+      <td style="${sty.cel_l}">${f.desc}</td>
+      <td style="${sty.cel_r};color:#0d47a1;font-weight:${f.eC?'bold':'normal'}">${f.eC?n(f.eC):'—'}</td>
+      <td style="${sty.cel_r};color:#0d47a1">${f.eCu?'S/ '+n(f.eCu):'—'}</td>
+      <td style="${sty.cel_r};color:#0d47a1;font-weight:${f.eT?'bold':'normal'}">${f.eT?'S/ '+n(f.eT):'—'}</td>
+      <td style="${sty.cel_r};color:#b71c1c;font-weight:${f.sC?'bold':'normal'}">${f.sC?n(f.sC):'—'}</td>
+      <td style="${sty.cel_r};color:#b71c1c">${f.sCu?'S/ '+n(f.sCu):'—'}</td>
+      <td style="${sty.cel_r};color:#b71c1c;font-weight:${f.sT?'bold':'normal'}">${f.sT?'S/ '+n(f.sT):'—'}</td>
+      <td style="${sty.cel_r};color:#1b5e20;font-weight:bold">${n(f.sdC)}</td>
+      <td style="${sty.cel_r};color:#1b5e20">S/ ${n(f.sdCu)}</td>
+      <td style="${sty.cel_r};color:#1b5e20;font-weight:bold">S/ ${n(f.sdT)}</td>
+    </tr>`;
+  }).join('');
+
+  if(!filas.length) htmlFilas=`<tr><td colspan="13" style="${sty.cel};color:#888;font-style:italic">Sin movimientos en el período seleccionado</td></tr>`;
+
+  const html=`
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+<head><meta charset="UTF-8">
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+<x:Name>Kardex</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+</head><body>
+<table style="${sty.tbl}">
+  <!-- TÍTULO -->
+  <tr><td colspan="13" style="${sty.titulo}">KARDEX DE INVENTARIO — MÉTODO PROMEDIO PONDERADO</td></tr>
+  <tr><td colspan="13" style="background:#283593;color:#fff;text-align:center;padding:5px;font-size:10pt;border:1px solid #000">SUMAQ IMPORTADORA S.A.C.</td></tr>
+
+  <!-- DATOS DEL PRODUCTO -->
+  <tr>
+    <td colspan="2" style="${sty.info_lbl}">EMPRESA</td>
+    <td colspan="4" style="${sty.info_val}">SUMAQ Importadora S.A.C.</td>
+    <td colspan="2" style="${sty.info_lbl}">FECHA REPORTE</td>
+    <td colspan="5" style="${sty.info_val}">${hoy}</td>
+  </tr>
+  <tr>
+    <td colspan="2" style="${sty.info_lbl}">PRODUCTO</td>
+    <td colspan="4" style="${sty.info_val};font-weight:bold">${prod?.name||'—'}</td>
+    <td colspan="2" style="${sty.info_lbl}">CÓDIGO</td>
+    <td colspan="5" style="${sty.info_val}">${prod?.default_code||'S/C'}</td>
+  </tr>
+  <tr>
+    <td colspan="2" style="${sty.info_lbl}">CATEGORÍA</td>
+    <td colspan="4" style="${sty.info_val}">${Array.isArray(prod?.categ_id)?prod.categ_id[1]:'—'}</td>
+    <td colspan="2" style="${sty.info_lbl}">UNIDAD</td>
+    <td colspan="5" style="${sty.info_val}">${Array.isArray(prod?.uom_id)?prod.uom_id[1]:'und'}</td>
+  </tr>
+  <tr>
+    <td colspan="2" style="${sty.info_lbl}">PRECIO DE VENTA</td>
+    <td colspan="4" style="${sty.info_val}">S/ ${n(prod?.list_price)}</td>
+    <td colspan="2" style="${sty.info_lbl}">COSTO ESTÁNDAR</td>
+    <td colspan="5" style="${sty.info_val}">S/ ${n(prod?.standard_price)}</td>
+  </tr>
+  <tr>
+    <td colspan="2" style="${sty.info_lbl}">PERÍODO</td>
+    <td colspan="4" style="${sty.info_val}">${dateFrom} al ${dateTo}</td>
+    <td colspan="2" style="${sty.info_lbl}">MÉTODO</td>
+    <td colspan="5" style="${sty.info_val}">Promedio Ponderado</td>
+  </tr>
+
+  <!-- FILA VACÍA -->
+  <tr><td colspan="13" style="height:10px;border:none"></td></tr>
+
+  <!-- HEADERS NIVEL 1 -->
+  <tr>
+    <th rowspan="2" style="${sty.hdr_main};${sty.hdr_base};min-width:80px">FECHA</th>
+    <th rowspan="2" style="${sty.hdr_main};${sty.hdr_base};min-width:120px">N° DOCUMENTO</th>
+    <th rowspan="2" style="${sty.hdr_main};${sty.hdr_base};min-width:80px">TIPO</th>
+    <th rowspan="2" style="${sty.hdr_main};${sty.hdr_base};min-width:200px">DESCRIPCIÓN / ORIGEN</th>
+    <th colspan="3" style="${sty.hdr_main};${sty.hdr_ent}">ENTRADAS</th>
+    <th colspan="3" style="${sty.hdr_main};${sty.hdr_sal}">SALIDAS</th>
+    <th colspan="3" style="${sty.hdr_main};${sty.hdr_sld}">SALDO</th>
+  </tr>
+  <!-- HEADERS NIVEL 2 -->
+  <tr>
+    <th style="${sty.hdr_main};${sty.hdr_ent};min-width:70px">CANTIDAD</th>
+    <th style="${sty.hdr_main};${sty.hdr_ent};min-width:90px">COSTO UNIT.</th>
+    <th style="${sty.hdr_main};${sty.hdr_ent};min-width:90px">TOTAL</th>
+    <th style="${sty.hdr_main};${sty.hdr_sal2};min-width:70px">CANTIDAD</th>
+    <th style="${sty.hdr_main};${sty.hdr_sal2};min-width:90px">COSTO UNIT.</th>
+    <th style="${sty.hdr_main};${sty.hdr_sal2};min-width:90px">TOTAL</th>
+    <th style="${sty.hdr_main};${sty.hdr_sld};min-width:70px">CANTIDAD</th>
+    <th style="${sty.hdr_main};${sty.hdr_sld};min-width:90px">COSTO UNIT.</th>
+    <th style="${sty.hdr_main};${sty.hdr_sld};min-width:90px">TOTAL</th>
+  </tr>
+
+  <!-- FILAS DE DATOS -->
+  ${htmlFilas}
+
+  <!-- TOTALES -->
+  <tr style="${sty.tot_row}">
+    <td colspan="4" style="${sty.cel_l};font-weight:bold;font-size:10pt;background:#f5f5f5">TOTALES DEL PERÍODO</td>
+    <td style="${sty.cel_r};color:#0d47a1;font-weight:bold">${n(totEC)}</td>
+    <td style="${sty.cel_r};color:#0d47a1">—</td>
+    <td style="${sty.cel_r};color:#0d47a1;font-weight:bold">S/ ${n(totET)}</td>
+    <td style="${sty.cel_r};color:#b71c1c;font-weight:bold">${n(totSC)}</td>
+    <td style="${sty.cel_r};color:#b71c1c">—</td>
+    <td style="${sty.cel_r};color:#b71c1c;font-weight:bold">S/ ${n(totST)}</td>
+    <td style="${sty.cel_r};color:#1b5e20;font-weight:bold;font-size:11pt">${n(saldoCant)}</td>
+    <td style="${sty.cel_r};color:#1b5e20">S/ ${n(costoAcum)}</td>
+    <td style="${sty.cel_r};color:#1b5e20;font-weight:bold;font-size:11pt">S/ ${n(saldoCant*costoAcum)}</td>
+  </tr>
+
+  <!-- PIE -->
+  <tr><td colspan="13" style="height:15px;border:none"></td></tr>
+  <tr>
+    <td colspan="4" style="${sty.info_lbl}">PREPARADO POR</td>
+    <td colspan="4" style="${sty.info_val}">Sistema SUMAQ — Administrador</td>
+    <td colspan="2" style="${sty.info_lbl}">FIRMA / SELLO</td>
+    <td colspan="3" style="border:1px solid #9fa8da;height:40px"></td>
+  </tr>
+</table>
+</body></html>`;
+
+  const blob=new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  const nomProd=(prod?.name||'producto').replace(/[^a-zA-Z0-9]/g,'_');
-  a.href=url;a.download=`KARDEX_${nomProd}_${dateFrom}_${dateTo}.csv`;a.click();
+  a.href=url;
+  a.download=`KARDEX_${nomProd}_${dateFrom}_${dateTo}.xls`;
+  a.click();
   URL.revokeObjectURL(url);
-  showToast('✅ Kardex descargado correctamente','success');
+  showToast('✅ Kardex Excel descargado correctamente','success');
 }
 </script>
 </body>
